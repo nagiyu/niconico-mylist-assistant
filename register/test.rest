@@ -1,0 +1,9 @@
+@host = 
+
+###
+POST {{host}}
+Content-Type: application/json
+
+{
+    "url": "https://github.com/nagiyu"
+}

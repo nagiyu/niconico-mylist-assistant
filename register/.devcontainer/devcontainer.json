@@ -1,0 +1,58 @@
+{
+  "name": "register",
+  "build": {
+    "dockerfile": "../Dockerfile"
+  },
+  "remoteUser": "user",
+  "containerEnv": {
+    "AWS_ACCESS_KEY_ID": "",
+    "AWS_SECRET_ACCESS_KEY": "",
+    "AWS_DEFAULT_REGION": "",
+    "S3_BUCKET_NAME": ""
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "donjayamanne.githistory",
+        "eamodio.gitlens",
+        "oderwat.indent-rainbow",
+        "github.vscode-pull-request-github",
+        "humao.rest-client",
+        "wmaurer.change-case",
+        "wayou.vscode-todo-highlight",
+        "dbaeumer.vscode-eslint",
+        "bierner.markdown-mermaid",
+        "saoudrizwan.claude-dev",
+        "ms-vscode-remote.remote-containers",
+        "github.copilot",
+        "ms-python.python",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "editor.renderWhitespace": "boundary",
+        "[shellscript]": {
+          "editor.tabSize": 2
+        },
+        "[typescript]": {
+          "editor.tabSize": 2
+        },
+        "[jsonc]": {
+          "editor.tabSize": 2
+        },
+        "[javascript]": {
+          "editor.tabSize": 2
+        },
+        "[html]": {
+          "editor.tabSize": 2
+        },
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "always"
+        },
+        "editor.formatOnSave": true,
+        "[markdown]": {
+          "editor.tabSize": 2
+        }
+      }
+    }
+  }
+}
