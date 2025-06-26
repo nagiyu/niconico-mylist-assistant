@@ -1,9 +1,28 @@
+"use client";
+
 import Image from "next/image";
 import styles from "./page.module.css";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function Home() {
+  const { data: session } = useSession();
+
   return (
     <div className={styles.page}>
+      <div>
+        <h1>サインイン</h1>
+        {!session ? (
+          <>
+            <p>サインインしてください。</p>
+            <button onClick={() => signIn()}>Login with Google</button>
+          </>
+        ) : (
+          <>
+            <p>ようこそ、{session.user?.name}さん！</p>
+            <button onClick={() => signOut()}>Logout</button>
+          </>
+        )}
+      </div>
       <main className={styles.main}>
         <Image
           className={styles.logo}
