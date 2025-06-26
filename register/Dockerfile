@@ -5,6 +5,7 @@ RUN dnf install -y atk cups-libs gtk3 libXcomposite alsa-lib \
     libXtst pango at-spi2-atk libXt xorg-x11-server-Xvfb \
     xorg-x11-xauth dbus-glib dbus-glib-devel nss mesa-libgbm \
     libgbm libxkbcommon libdrm \
+    ipa-gothic-fonts ipa-mincho-fonts ipa-pgothic-fonts ipa-pmincho-fonts \
     git
 
 COPY handler.py ${LAMBDA_TASK_ROOT}
@@ -14,15 +15,13 @@ COPY app ${LAMBDA_TASK_ROOT}/app
 RUN pip install -r requirements.txt
 
 # Accept AWS credentials and S3 bucket as build arguments
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_SECRET_ACCESS_KEY
 ARG AWS_DEFAULT_REGION
 ARG S3_BUCKET_NAME
+ARG SHARED_SECRET_KEY
 
-ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 ENV AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
 ENV S3_BUCKET_NAME=${S3_BUCKET_NAME}
+ENV SHARED_SECRET_KEY=${SHARED_SECRET_KEY}
 
 ENV SE_CACHE_PATH=/tmp
 

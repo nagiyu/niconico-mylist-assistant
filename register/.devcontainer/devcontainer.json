@@ -8,7 +8,11 @@
     "AWS_ACCESS_KEY_ID": "",
     "AWS_SECRET_ACCESS_KEY": "",
     "AWS_DEFAULT_REGION": "",
-    "S3_BUCKET_NAME": ""
+    "S3_BUCKET_NAME": "",
+    "MYLIST_EMAIL": "",
+    "MYLIST_PASSWORD": "",
+    "MYLIST_ID_LIST": "[]",
+    "SHARED_SECRET_KEY": ""
   },
   "customizations": {
     "vscode": {
