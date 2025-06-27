@@ -24,7 +24,7 @@ export default function DeleteDialog({
             <DialogContent>
                 {target ? (
                     <div>
-                        <div>ID: {target.id}</div>
+                        <div>ID: {target.music_id}</div>
                         <div>タイトル: {target.title}</div>
                         <div>本当に削除しますか？</div>
                     </div>

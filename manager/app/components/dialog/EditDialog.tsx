@@ -27,15 +27,15 @@ export default function EditDialog({
 }: EditDialogProps) {
     return (
         <Dialog open={open} onClose={onClose}>
-            <DialogTitle>{editData && editData.id ? "編集" : "追加"}</DialogTitle>
+            <DialogTitle>{!!editData?.user_music_setting_id ? "編集" : "追加"}</DialogTitle>
             <DialogContent>
                 <TextField
                     margin="dense"
                     label="ID"
                     fullWidth
-                    value={editData?.id ?? ""}
-                    onChange={e => setEditData(data => data ? { ...data, id: e.target.value } : data)}
-                    disabled={!!(editData && editData.id)}
+                    value={editData?.music_id ?? ""}
+                    onChange={e => setEditData(data => data ? { ...data, music_id: e.target.value } : data)}
+                    disabled={!!editData?.user_music_setting_id}
                 />
                 <TextField
                     margin="dense"

@@ -19,26 +19,56 @@ import DeleteDialog from "@/app/components/dialog/DeleteDialog";
 import AutoDialog from "@/app/components/dialog/AutoDialog";
 
 import { Session } from "next-auth";
-import { EditData } from "@/app/types/EditData";
+import { IMusic } from "@/app/interface/IMusic";
 import { DeleteTarget } from "@/app/types/DeleteTarget";
+import { useEffect } from "react";
 
 export default function SignedInContent({ session }: { session: Session }) {
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [editData, setEditData] = useState<EditData>(null);
+    const [editData, setEditData] = useState<IMusic | null>(null);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
     const [autoDialogOpen, setAutoDialogOpen] = useState(false);
 
+    const [rows, setRows] = useState<IMusic[]>([]);
+
+    // APIからデータ取得する関数
+    const fetchMusic = async () => {
+        const res = await fetch("/api/music");
+        if (res.status === 401) {
+            // 認証エラー時は強制ログアウト
+            signOut();
+            return;
+        }
+        const data = await res.json();
+        setRows(data);
+    };
+
+    // 初回マウント時に API から取得
+    useEffect(() => {
+        fetchMusic();
+    }, [session.tokens]);
+
     const handleAdd = () => {
-        setEditData({ id: "", title: "", favorite: false, skip: false, memo: "" });
+        setEditData({
+            music_common_id: "",
+            user_music_setting_id: "",
+            music_id: "",
+            title: "",
+            favorite: false,
+            skip: false,
+            memo: ""
+        });
         setDialogOpen(true);
     };
 
-    const handleEdit = (row: { id: string; title: string; favorite?: boolean; skip?: boolean; memo?: string }) => {
+    const handleEdit = (row: IMusic) => {
         setEditData({
-            id: row.id,
+            music_common_id: row.music_common_id,
+            user_music_setting_id: row.user_music_setting_id,
+            music_id: row.music_id,
             title: row.title,
             favorite: row.favorite ?? false,
             skip: row.skip ?? false,
@@ -47,15 +77,58 @@ export default function SignedInContent({ session }: { session: Session }) {
         setDialogOpen(true);
     };
 
-    const handleDialogClose = () => {
+    const handleEditDialogClose = () => {
         setDialogOpen(false);
         setEditData(null);
     };
 
-    const handleDialogSave = () => {
+    const handleEditDialogSave = async () => {
+        if (!editData) return;
+        // music_common_id が空なら新規作成、あれば更新
+        const method = editData.music_common_id ? "PUT" : "POST";
+        const res = await fetch("/api/music", {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(editData),
+        });
+        if (res.status === 401) {
+            signOut();
+            return;
+        }
         setDialogOpen(false);
         setEditData(null);
-        // 保存処理はここに追加可能
+        await fetchMusic();
+    };
+
+    const handleDeleteDialogClose = () => {
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+    };
+
+    const handleDeleteDialogDelete = async () => {
+        if (deleteTarget) {
+            // rowsから該当データを取得
+            const row = rows.find(r => r.music_common_id === deleteTarget.music_common_id);
+            const res = await fetch("/api/music", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    music_common_id: row?.music_common_id ?? "",
+                    user_music_setting_id: row?.user_music_setting_id ?? ""
+                }),
+            });
+            if (res.status === 401) {
+                signOut();
+                return;
+            }
+        }
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+        await fetchMusic();
     };
 
     return (
@@ -72,77 +145,73 @@ export default function SignedInContent({ session }: { session: Session }) {
             </AppBar>
 
             <main className={styles.main}>
-                {(() => {
-                    const rows = [
-                        {
-                            id: "sm43166484",
-                            title: "JUVENILE",
-                            favorite: true,
-                            skip: false,
-                        },
-                        {
-                            id: "sm44683022",
-                            title: "急性恋愛中毒",
-                            favorite: false,
-                            skip: true,
-                        },
-                    ];
-                    return (
-                        <>
-                            <div style={{ maxWidth: 600, margin: "24px auto 8px auto", display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                                <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
-                                <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
-                            </div>
-                            <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>ID</TableCell>
-                                            <TableCell>タイトル</TableCell>
-                                            <TableCell align="center">お気に入り</TableCell>
-                                            <TableCell align="center">スキップ</TableCell>
-                                            <TableCell align="center">オプション</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {rows.map((row) => (
-                                            <TableRow key={row.id}>
-                                                <TableCell>{row.id}</TableCell>
-                                                <TableCell>{row.title}</TableCell>
-                                                <TableCell align="center">{row.favorite ? "○" : "×"}</TableCell>
-                                                <TableCell align="center">{row.skip ? "○" : "×"}</TableCell>
-                                                <TableCell align="center">
-                                                    <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => handleEdit(row)}>Edit</Button>
-                                                    <Button size="small" variant="outlined" color="error" onClick={() => { setDeleteTarget({ id: row.id, title: row.title }); setDeleteDialogOpen(true); }}>Delete</Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </>
-                    );
-                })()}
+                <>
+                    <div style={{ maxWidth: 600, margin: "24px auto 8px auto", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
+                        <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
+                    </div>
+                    <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>ID</TableCell>
+                                    <TableCell>タイトル</TableCell>
+                                    <TableCell align="center">お気に入り</TableCell>
+                                    <TableCell align="center">スキップ</TableCell>
+                                    <TableCell align="center">オプション</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {rows.map((row) =>
+                                    <TableRow key={row.music_id}>
+                                        <TableCell>{row.music_id}</TableCell>
+                                        <TableCell>{row.title}</TableCell>
+                                        <TableCell align="center">{row.favorite ? "○" : "×"}</TableCell>
+                                        <TableCell align="center">{row.skip ? "○" : "×"}</TableCell>
+                                        <TableCell align="center">
+                                            <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => handleEdit(row)}>Edit</Button>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => {
+                                                    if (row && row.music_common_id && row.title) {
+                                                        setDeleteTarget({
+                                                            music_common_id: row.music_common_id,
+                                                            user_music_setting_id: row.user_music_setting_id,
+                                                            music_id: row.music_id,
+                                                            title: row.title
+                                                        });
+                                                        setDeleteDialogOpen(true);
+                                                    }
+                                                }}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </>
             </main>
 
             <EditDialog
                 open={dialogOpen}
                 editData={editData}
                 setEditData={setEditData}
-                onClose={handleDialogClose}
-                onSave={handleDialogSave}
+                onClose={handleEditDialogClose}
+                onSave={handleEditDialogSave}
             />
 
             <DeleteDialog
                 open={deleteDialogOpen}
                 target={deleteTarget}
-                onClose={() => { setDeleteDialogOpen(false); setDeleteTarget(null); }}
-                onDelete={() => {
-                    // 削除処理はここに追加可能
-                    setDeleteDialogOpen(false);
-                    setDeleteTarget(null);
-                }}
+                onClose={handleDeleteDialogClose}
+                onDelete={handleDeleteDialogDelete}
             />
+
             <AutoDialog
                 open={autoDialogOpen}
                 onClose={() => setAutoDialogOpen(false)}
