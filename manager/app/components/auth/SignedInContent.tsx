@@ -22,6 +22,7 @@ import { Session } from "next-auth";
 import { IMusic } from "@/app/interface/IMusic";
 import { DeleteTarget } from "@/app/types/DeleteTarget";
 import { useEffect } from "react";
+import { IRegisterRequest } from "@/app/interface/IRegisterRequest";
 
 export default function SignedInContent({ session }: { session: Session }) {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -215,8 +216,31 @@ export default function SignedInContent({ session }: { session: Session }) {
             <AutoDialog
                 open={autoDialogOpen}
                 onClose={() => setAutoDialogOpen(false)}
-                onAuto={() => {
-                    // 自動処理はここに追加可能
+                onAuto={async ({ email, password, mylistTitle, count }) => {
+                    // rowsからskip=falseのmusic_idをランダム抽出
+                    const filtered = rows.filter(r => !r.skip);
+                    const shuffled = filtered
+                        .map(value => ({ value, sort: Math.random() }))
+                        .sort((a, b) => a.sort - b.sort)
+                        .map(({ value }) => value);
+                    const id_list = shuffled.slice(0, count).map(r => r.music_id);
+
+                    try {
+                        const reqBody: IRegisterRequest = { email, password, id_list };
+                        const res = await fetch("/api/register", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(reqBody),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            alert("自動処理成功: " + JSON.stringify(data));
+                        } else {
+                            alert("自動処理失敗: " + JSON.stringify(data));
+                        }
+                    } catch (e) {
+                        alert("自動処理エラー: " + e);
+                    }
                     setAutoDialogOpen(false);
                 }}
             />

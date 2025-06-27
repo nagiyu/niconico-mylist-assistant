@@ -12,7 +12,9 @@
     "NEXTAUTH_SECRET": "",
     "GOOGLE_CLIENT_ID": "",
     "GOOGLE_CLIENT_SECRET": "",
-    "DYNAMO_TABLE_NAME": ""
+    "DYNAMO_TABLE_NAME": "",
+    "REGISTER_LAMBDA_ENDPOINT": "",
+    "SHARED_SECRET_KEY": ""
   },
   "customizations": {
     "vscode": {

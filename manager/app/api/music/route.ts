@@ -183,29 +183,52 @@ export async function PUT(req: NextRequest) {
   );
 
   // ユーザー個人設定
-  await client.send(
-    new UpdateItemCommand({
-      TableName,
-      Key: { ID: { S: body.user_music_setting_id }, DataType: { S: "user" } },
-      UpdateExpression: "SET #musicid = :musicid, #favorite = :favorite, #skip = :skip, #memo = :memo, #update = :update, #userid = :userid",
-      ExpressionAttributeNames: {
-        "#musicid": "MusicID",
-        "#favorite": "favorite",
-        "#skip": "skip",
-        "#memo": "memo",
-        "#update": "Update",
-        "#userid": "UserID",
-      },
-      ExpressionAttributeValues: {
-        ":musicid": { S: body.music_id },
-        ":favorite": { BOOL: body.favorite },
-        ":skip": { BOOL: body.skip },
-        ":memo": { S: body.memo ?? "" },
-        ":update": { S: now },
-        ":userid": { S: userId },
-      },
-    })
-  );
+  if (!body.user_music_setting_id) {
+    // user_music_setting_idがなければ新規追加
+    const user_music_setting_id = randomUUID();
+    await client.send(
+      new PutItemCommand({
+        TableName,
+        Item: {
+          ID: { S: user_music_setting_id },
+          DataType: { S: "user" },
+          Create: { S: now },
+          Update: { S: now },
+          Delete: { S: "" },
+          MusicID: { S: body.music_id },
+          UserID: { S: userId },
+          favorite: { BOOL: body.favorite },
+          skip: { BOOL: body.skip },
+          memo: { S: body.memo ?? "" },
+        },
+      })
+    );
+  } else {
+    // user_music_setting_idがあれば更新
+    await client.send(
+      new UpdateItemCommand({
+        TableName,
+        Key: { ID: { S: body.user_music_setting_id }, DataType: { S: "user" } },
+        UpdateExpression: "SET #musicid = :musicid, #favorite = :favorite, #skip = :skip, #memo = :memo, #update = :update, #userid = :userid",
+        ExpressionAttributeNames: {
+          "#musicid": "MusicID",
+          "#favorite": "favorite",
+          "#skip": "skip",
+          "#memo": "memo",
+          "#update": "Update",
+          "#userid": "UserID",
+        },
+        ExpressionAttributeValues: {
+          ":musicid": { S: body.music_id },
+          ":favorite": { BOOL: body.favorite },
+          ":skip": { BOOL: body.skip },
+          ":memo": { S: body.memo ?? "" },
+          ":update": { S: now },
+          ":userid": { S: userId },
+        },
+      })
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }

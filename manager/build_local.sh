@@ -1,6 +1,9 @@
 #!/bin/bash
 
 docker build \
+  --build-arg AWS_ACCESS_KEY_ID= \
+  --build-arg AWS_SECRET_ACCESS_KEY= \
+  --build-arg AWS_REGION= \
   --build-arg NEXTAUTH_URL= \
   --build-arg NEXTAUTH_SECRET= \
   --build-arg GOOGLE_CLIENT_ID= \
