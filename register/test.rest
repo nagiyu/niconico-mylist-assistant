@@ -1,0 +1,16 @@
+@host = 
+
+###
+POST {{host}}
+Content-Type: application/json
+
+{
+    "email": "",
+    "password": "",
+    "id_list": [
+        "sm43937640",
+        "sm44167259",
+        "sm44683022",
+        "sm43166484"
+    ]
+}
