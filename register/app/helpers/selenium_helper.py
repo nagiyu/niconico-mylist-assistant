@@ -14,6 +14,25 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument('--no-zygote')
+    
+    # Performance optimizations - disable unnecessary features
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-backgrounding-occluded-windows")
+    options.add_argument("--disable-renderer-backgrounding")
+    options.add_argument("--disable-features=TranslateUI")
+    options.add_argument("--aggressive-cache-discard")
+    options.add_argument("--memory-pressure-off")
+    
+    # Set preferences to disable images and CSS
+    prefs = {
+        "profile.managed_default_content_settings.images": 2,
+        "profile.default_content_setting_values.notifications": 2,
+        "profile.default_content_settings.popups": 0
+    }
+    options.add_experimental_option("prefs", prefs)
 
     return webdriver.Chrome(options=options)
 
