@@ -189,7 +189,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                     </div>
                     <div className={styles.tableWrapper}>
-                        <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
+                        <TableContainer component={Paper} sx={{ 
+                            maxWidth: { xs: 'none', sm: 600 }, 
+                            margin: { xs: '24px 0', sm: '24px auto' } 
+                        }}>
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
