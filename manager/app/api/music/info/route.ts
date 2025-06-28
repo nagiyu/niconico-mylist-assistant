@@ -70,8 +70,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // タイトルを抽出 (正規表現を使用してシンプルに)
-    const titleMatch = xmlText.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+    // タイトルを抽出 (CDATA形式と通常形式の両方に対応)
+    let titleMatch = xmlText.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+    if (!titleMatch) {
+      // CDATA形式でない場合は通常の形式を試す
+      titleMatch = xmlText.match(/<title>(.*?)<\/title>/);
+    }
+    
     if (!titleMatch) {
       return NextResponse.json({
         status: "failure",
