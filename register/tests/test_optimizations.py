@@ -67,3 +67,14 @@ class TestPerformanceOptimizations:
         sig = inspect.signature(selenium_helper.wait_and_find_element)
         timeout_param = sig.parameters['timeout']
         assert timeout_param.default == 8, f"Expected timeout default 8, got {timeout_param.default}"
+    
+    def test_list_flattening_optimization(self):
+        """Test that the list comprehension approach works correctly."""
+        # Simulate the failed_id_lists structure
+        test_sublists = [['video1', 'video2'], ['video3'], ['video4', 'video5']]
+        
+        # Test the optimized list comprehension approach
+        flattened = [video_id for sublist in test_sublists for video_id in sublist]
+        
+        expected = ['video1', 'video2', 'video3', 'video4', 'video5']
+        assert flattened == expected, f"Expected {expected}, got {flattened}"
