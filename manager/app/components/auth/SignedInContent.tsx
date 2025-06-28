@@ -98,6 +98,12 @@ export default function SignedInContent({ session }: { session: Session }) {
             signOut();
             return;
         }
+        if (!res.ok) {
+            // エラーレスポンスを処理
+            const errorData = await res.json();
+            alert(errorData.error || "エラーが発生しました");
+            return;
+        }
         setDialogOpen(false);
         setEditData(null);
         await fetchMusic();
