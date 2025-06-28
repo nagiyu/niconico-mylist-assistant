@@ -1,38 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DynamoDBClient, PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/config/authOptions";
+import { PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
+import { getGoogleUserIdFromSession } from "@shared/auth";
+import { getDynamoClient } from "@shared/aws";
 import { randomUUID } from "crypto";
-
-function getDynamoClient() {
-  if (!!process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    // Lambda環境など、環境変数がない場合は credentials を指定しない
-    return new DynamoDBClient({
-      region: process.env.AWS_REGION
-    });
-  }
-
-  return new DynamoDBClient({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
-}
-
-// セッションからGoogleアクセストークンを取得し、ユーザーIDを取得
-async function getGoogleUserIdFromSession(): Promise<string> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.tokens?.find(t => t.provider === "google")?.accessToken;
-  if (!accessToken) return "";
-  const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) return "";
-  const data = await res.json();
-  return data.sub || "";
-}
 
 interface BulkImportItem {
   music_id: string;

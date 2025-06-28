@@ -1,0 +1,7 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/shared"],
+  "testMatch": ["**/__tests__/**/*.test.ts"],
+  "modulePathIgnorePatterns": []
+}
