@@ -153,54 +153,56 @@ export default function SignedInContent({ session }: { session: Session }) {
 
             <main className={styles.main}>
                 <>
-                    <div style={{ maxWidth: 600, margin: "24px auto 8px auto", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <div className={styles.buttonContainer}>
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                     </div>
-                    <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>タイトル</TableCell>
-                                    <TableCell align="center">お気に入り</TableCell>
-                                    <TableCell align="center">スキップ</TableCell>
-                                    <TableCell align="center">オプション</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row) =>
-                                    <TableRow key={row.music_id}>
-                                        <TableCell>{row.music_id}</TableCell>
-                                        <TableCell>{row.title}</TableCell>
-                                        <TableCell align="center">{row.favorite ? "○" : "×"}</TableCell>
-                                        <TableCell align="center">{row.skip ? "○" : "×"}</TableCell>
-                                        <TableCell align="center">
-                                            <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => handleEdit(row)}>Edit</Button>
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                color="error"
-                                                onClick={() => {
-                                                    if (row && row.music_common_id && row.title) {
-                                                        setDeleteTarget({
-                                                            music_common_id: row.music_common_id,
-                                                            user_music_setting_id: row.user_music_setting_id,
-                                                            music_id: row.music_id,
-                                                            title: row.title
-                                                        });
-                                                        setDeleteDialogOpen(true);
-                                                    }
-                                                }}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </TableCell>
+                    <div className={styles.tableWrapper}>
+                        <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>ID</TableCell>
+                                        <TableCell>タイトル</TableCell>
+                                        <TableCell align="center">お気に入り</TableCell>
+                                        <TableCell align="center">スキップ</TableCell>
+                                        <TableCell align="center">オプション</TableCell>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                </TableHead>
+                                <TableBody>
+                                    {rows.map((row) =>
+                                        <TableRow key={row.music_id}>
+                                            <TableCell>{row.music_id}</TableCell>
+                                            <TableCell>{row.title}</TableCell>
+                                            <TableCell align="center">{row.favorite ? "○" : "×"}</TableCell>
+                                            <TableCell align="center">{row.skip ? "○" : "×"}</TableCell>
+                                            <TableCell align="center">
+                                                <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => handleEdit(row)}>Edit</Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="error"
+                                                    onClick={() => {
+                                                        if (row && row.music_common_id && row.title) {
+                                                            setDeleteTarget({
+                                                                music_common_id: row.music_common_id,
+                                                                user_music_setting_id: row.user_music_setting_id,
+                                                                music_id: row.music_id,
+                                                                title: row.title
+                                                            });
+                                                            setDeleteDialogOpen(true);
+                                                        }
+                                                    }}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
                 </>
             </main>
 
