@@ -116,22 +116,6 @@ export async function POST(req: NextRequest) {
 
   const client = getDynamoClient();
   
-  // ユーザーが既にこの楽曲を追加済みかチェック
-  const userCheckCommand = new ScanCommand({
-    TableName,
-    FilterExpression: "DataType = :datatype AND MusicID = :musicid AND UserID = :userid",
-    ExpressionAttributeValues: {
-      ":datatype": { S: "user" },
-      ":musicid": { S: body.music_id },
-      ":userid": { S: userId },
-    },
-  });
-
-  const userResult = await client.send(userCheckCommand);
-  if (userResult.Items && userResult.Items.length > 0) {
-    return NextResponse.json({ error: "この楽曲ID（" + body.music_id + "）は既に追加されています。" }, { status: 400 });
-  }
-
   // 音楽共通情報が既に存在するかチェック
   const musicCheckCommand = new ScanCommand({
     TableName,
