@@ -41,7 +41,7 @@ def remove_all_mylist(driver):
         selenium_helper.wait_and_click(driver, MYLIST_REMOVE2_XPATH)
         selenium_helper.wait_and_click(driver, MYLIST_REMOVE3_XPATH)
         selenium_helper.wait_and_accept_alert(driver)
-        time.sleep(1)
+        time.sleep(0.5)  # Reduced from 1 second to 0.5 seconds
         driver.get(MYLIST_URL)
 
 def create_mylist(driver):
@@ -50,7 +50,7 @@ def create_mylist(driver):
     mylist_name = f"MyList_{current_time}"
     selenium_helper.wait_and_send_keys(driver, MYLIST_TITLE_INPUT_XPATH, mylist_name)
     selenium_helper.wait_and_click(driver, MYLIST_CREATE_CONFIRM_XPATH)
-    time.sleep(1)
+    time.sleep(0.5)  # Reduced from 1 second to 0.5 seconds
     return mylist_name
 
 def add_videos_to_mylist(driver, id_list):
@@ -58,11 +58,11 @@ def add_videos_to_mylist(driver, id_list):
     for video_id in id_list:
         try:
             driver.get(f"{NICO_URL}/watch/{video_id}")
-            element = selenium_helper.wait_and_find_element(driver, VIDEO_MENU_PARENT_XPATH)
-            selenium_helper.wait_and_click_in_element(element, VIDEO_MENU_BUTTON_XPATH)
-            selenium_helper.wait_and_click(driver, VIDEO_ADD_TO_MYLIST_XPATH)
-            selenium_helper.wait_and_click(driver, VIDEO_MYLIST_SELECT_XPATH)
-            time.sleep(1)
+            element = selenium_helper.wait_and_find_element(driver, VIDEO_MENU_PARENT_XPATH, timeout=8)
+            selenium_helper.wait_and_click_in_element(element, VIDEO_MENU_BUTTON_XPATH, timeout=5)
+            selenium_helper.wait_and_click(driver, VIDEO_ADD_TO_MYLIST_XPATH, timeout=5)
+            selenium_helper.wait_and_click(driver, VIDEO_MYLIST_SELECT_XPATH, timeout=5)
+            time.sleep(0.3)  # Reduced from 1 second to 0.3 seconds
         except Exception:
             selenium_helper.save_screenshot_to_s3(driver)
             failed_id_list.append(video_id)

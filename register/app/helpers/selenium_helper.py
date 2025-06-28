@@ -14,11 +14,30 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument('--no-zygote')
+    
+    # Performance optimizations - disable unnecessary features
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-backgrounding-occluded-windows")
+    options.add_argument("--disable-renderer-backgrounding")
+    options.add_argument("--disable-features=TranslateUI")
+    options.add_argument("--aggressive-cache-discard")
+    options.add_argument("--memory-pressure-off")
+    
+    # Set preferences to disable images and CSS
+    prefs = {
+        "profile.managed_default_content_settings.images": 2,
+        "profile.default_content_setting_values.notifications": 2,
+        "profile.default_content_settings.popups": 0
+    }
+    options.add_experimental_option("prefs", prefs)
 
     return webdriver.Chrome(options=options)
 
 
-def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 10) -> None:
+def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 8) -> None:
     """
     Wait until the element specified by xpath is visible, then click it.
     """
@@ -28,7 +47,7 @@ def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 10) -> None:
     driver.find_element("xpath", xpath).click()
 
 
-def wait_and_click_in_element(element: WebElement, xpath: str, timeout: int = 10) -> None:
+def wait_and_click_in_element(element: WebElement, xpath: str, timeout: int = 8) -> None:
     """
     指定したelementの下でxpathの要素が表示されるまで待ち、クリックする。
     """
@@ -38,7 +57,7 @@ def wait_and_click_in_element(element: WebElement, xpath: str, timeout: int = 10
     element.find_element("xpath", xpath).click()
 
 
-def wait_and_send_keys(driver: WebDriver, xpath: str, keys: str, timeout: int = 10) -> None:
+def wait_and_send_keys(driver: WebDriver, xpath: str, keys: str, timeout: int = 8) -> None:
     """
     Wait until the element specified by xpath is visible, then send keys to it.
     """
@@ -49,7 +68,7 @@ def wait_and_send_keys(driver: WebDriver, xpath: str, keys: str, timeout: int = 
     driver.find_element("xpath", xpath).send_keys(keys)
 
 
-def wait_and_accept_alert(driver: WebDriver, timeout: int = 10) -> None:
+def wait_and_accept_alert(driver: WebDriver, timeout: int = 8) -> None:
     """
     Wait until a JavaScript alert/confirm dialog is present, then accept (OK) it.
     """
@@ -76,7 +95,7 @@ def save_screenshot_to_s3(driver: WebDriver) -> str:
     return s3_url
 
 
-def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 10) -> WebElement:
+def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 8) -> WebElement:
     """
     指定したxpathの要素が表示されるまで待ち、その要素を返す。
     """
@@ -86,7 +105,7 @@ def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 10) -> W
     return driver.find_element("xpath", xpath)
 
 
-def wait_and_find_element_in_element(element: WebElement, xpath: str, timeout: int = 10) -> WebElement:
+def wait_and_find_element_in_element(element: WebElement, xpath: str, timeout: int = 8) -> WebElement:
     """
     指定したelementの下でxpathの要素が表示されるまで待ち、その要素を返す。
     """
