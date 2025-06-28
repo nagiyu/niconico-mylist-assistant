@@ -17,6 +17,7 @@ import { useState } from "react";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
 import AutoDialog from "@/app/components/dialog/AutoDialog";
+import BulkImportDialog from "@/app/components/dialog/BulkImportDialog";
 
 import { Session } from "next-auth";
 import { IMusic } from "@/app/interface/IMusic";
@@ -32,6 +33,7 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
     const [autoDialogOpen, setAutoDialogOpen] = useState(false);
+    const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
 
     const [rows, setRows] = useState<IMusic[]>([]);
 
@@ -132,6 +134,34 @@ export default function SignedInContent({ session }: { session: Session }) {
         await fetchMusic();
     };
 
+    const handleBulkImport = async (items: { music_id: string; title: string }[]) => {
+        const res = await fetch("/api/music/bulk-import", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ items }),
+        });
+        
+        if (res.status === 401) {
+            signOut();
+            return;
+        }
+
+        const result = await res.json();
+        
+        // Show results to user
+        const message = `インポート完了:
+成功: ${result.success}件
+スキップ: ${result.skip}件
+失敗: ${result.failure}件`;
+        
+        alert(message);
+        
+        // Refresh the music list
+        await fetchMusic();
+    };
+
     return (
         <>
             <AppBar position="static" color="default" elevation={1}>
@@ -149,6 +179,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                 <>
                     <div style={{ maxWidth: 600, margin: "24px auto 8px auto", display: "flex", gap: 8, justifyContent: "flex-end" }}>
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
+                        <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                     </div>
                     <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
@@ -211,6 +242,12 @@ export default function SignedInContent({ session }: { session: Session }) {
                 target={deleteTarget}
                 onClose={handleDeleteDialogClose}
                 onDelete={handleDeleteDialogDelete}
+            />
+
+            <BulkImportDialog
+                open={bulkImportDialogOpen}
+                onClose={() => setBulkImportDialogOpen(false)}
+                onImport={handleBulkImport}
             />
 
             <AutoDialog
