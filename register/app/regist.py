@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from app.helpers import selenium_helper
 
 # 定数
@@ -20,6 +21,7 @@ VIDEO_MENU_PARENT_XPATH = '//*[@id="root"]/div[1]/main/div[2]/section/div[1]/div
 VIDEO_MENU_BUTTON_XPATH = './/button[@aria-label="メニュー"]'
 VIDEO_ADD_TO_MYLIST_XPATH = '//button[text()="マイリストに追加"]'
 VIDEO_MYLIST_SELECT_XPATH = '//*[@id="root"]/div[1]/main/div[2]/section/div[3]/div[2]/section/div/ul/li[2]/button'
+MAX_THREADS = 5
 
 def login(driver, email, password):
     driver.get(NICO_URL)
@@ -67,12 +69,48 @@ def add_videos_to_mylist(driver, id_list):
             pass
     return failed_id_list
 
+
+def distribute_id_list(id_list, n):
+    """指定された数のスレッドにIDリストを分割する"""
+    chunks = [[] for _ in range(n)]
+
+    for i, item in enumerate(id_list):
+        chunks[i % n].append(item)
+
+    return chunks
+
+
+def process_regist(email, password, id_list):
+    driver = selenium_helper.create_chrome_driver()
+    driver.set_window_size(1920, 1080)
+    login(driver, email, password)
+    failed_id_list = add_videos_to_mylist(driver, id_list)
+    driver.quit()
+    return failed_id_list
+
+
 def regist(email, password, id_list):
     driver = selenium_helper.create_chrome_driver()
     driver.set_window_size(1920, 1080)
     login(driver, email, password)
     remove_all_mylist(driver)
     create_mylist(driver)
-    failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
+
+    threads = min(MAX_THREADS, len(id_list))
+    id_chunks = distribute_id_list(id_list, threads)
+
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        failed_id_lists = []
+        for chunk in id_chunks:
+            future = executor.submit(process_regist, email, password, chunk)
+            failed_id_lists.append(future.result())
+
+    # 1つのリストにまとめる
+    failed_id_list = []
+
+    for sublist in failed_id_lists:
+        for video_id in sublist:
+            failed_id_list.append(video_id)
+
     return failed_id_list
