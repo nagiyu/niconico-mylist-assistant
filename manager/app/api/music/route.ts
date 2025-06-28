@@ -129,27 +129,25 @@ export async function POST(req: NextRequest) {
   const musicResult = await client.send(musicCheckCommand);
   const musicExists = musicResult.Items && musicResult.Items.length > 0;
 
+  if (musicExists) {
+    return NextResponse.json({ error: "この楽曲ID（" + body.music_id + "）は既に追加されています。" }, { status: 400 });
+  }
+
   // サーバー側でUUID生成
-  let music_common_id: string;
+  const music_common_id = randomUUID();
   const user_music_setting_id = randomUUID();
 
-  if (!musicExists) {
-    // 音楽共通情報が存在しない場合のみ作成
-    music_common_id = randomUUID();
-    const musicItem = {
-      ID: { S: music_common_id },
-      DataType: { S: "music" },
-      Create: { S: now },
-      Update: { S: now },
-      Delete: { S: "" },
-      MusicID: { S: body.music_id },
-      Title: { S: body.title },
-    };
-    await client.send(new PutItemCommand({ TableName, Item: musicItem }));
-  } else {
-    // 既存の音楽共通情報のIDを取得
-    music_common_id = musicResult.Items![0].ID!.S!;
-  }
+  // 音楽共通情報を作成
+  const musicItem = {
+    ID: { S: music_common_id },
+    DataType: { S: "music" },
+    Create: { S: now },
+    Update: { S: now },
+    Delete: { S: "" },
+    MusicID: { S: body.music_id },
+    Title: { S: body.title },
+  };
+  await client.send(new PutItemCommand({ TableName, Item: musicItem }));
 
   // ユーザー個人設定（DataType: "user"）
   const userItem = {
