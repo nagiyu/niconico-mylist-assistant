@@ -38,8 +38,9 @@ export default function AutoDialog({
     const defaultTitle = `CustomMylist_${y}${m}${d}_${hh}${mm}${ss}`;
     const [mylistTitle, setMylistTitle] = useState(defaultTitle);
     
-    // Use rowsCount as default
-    const [count, setCount] = useState(rowsCount);
+    // Use rowsCount as default, but max 100
+    const defaultCount = Math.min(rowsCount, 100);
+    const [count, setCount] = useState(defaultCount);
 
     const [errors, setErrors] = useState<ValidationErrors>({
         email: "",
@@ -76,8 +77,8 @@ export default function AutoDialog({
                 if (!value || isNaN(num)) {
                     return "カウントは必須です";
                 }
-                if (num < 1 || num > rowsCount) {
-                    return `カウントは1〜${rowsCount}の範囲で入力してください`;
+                if (num < 1 || num > 100) {
+                    return "カウントは1〜100の範囲で入力してください";
                 }
                 break;
         }
@@ -106,7 +107,7 @@ export default function AutoDialog({
     useEffect(() => {
         if (open) {
             setErrors({ email: "", password: "", mylistTitle: "", count: "" });
-            setCount(rowsCount);
+            setCount(Math.min(rowsCount, 100));
         }
     }, [open, rowsCount]);
 
@@ -176,7 +177,7 @@ export default function AutoDialog({
                         setCount(value);
                         handleFieldChange("count", value);
                     }}
-                    inputProps={{ min: 1, max: rowsCount }}
+                    inputProps={{ min: 1, max: 100 }}
                     error={!!errors.count}
                     helperText={errors.count}
                 />
@@ -189,7 +190,7 @@ export default function AutoDialog({
                     onClick={handleAuto}
                     disabled={
                         !!errors.email || !!errors.password || !!errors.mylistTitle || !!errors.count ||
-                        !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > rowsCount
+                        !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > 100
                     }
                 >
                     実行
