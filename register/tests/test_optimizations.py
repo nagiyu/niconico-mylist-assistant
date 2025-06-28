@@ -53,20 +53,20 @@ class TestPerformanceOptimizations:
         chunk_sizes = [len(chunk) for chunk in chunks]
         assert max(chunk_sizes) - min(chunk_sizes) <= 1
     
-    def test_timeout_values_are_optimized(self):
-        """Test that timeout values have been reduced from default 10 to 8."""
-        # Check function signatures have optimized defaults
+    def test_timeout_values_are_default(self):
+        """Test that timeout values are at default 10 seconds."""
+        # Check function signatures have default values
         import inspect
         
         # Check wait_and_click timeout default
         sig = inspect.signature(selenium_helper.wait_and_click)
         timeout_param = sig.parameters['timeout']
-        assert timeout_param.default == 8, f"Expected timeout default 8, got {timeout_param.default}"
+        assert timeout_param.default == 10, f"Expected timeout default 10, got {timeout_param.default}"
         
         # Check wait_and_find_element timeout default
         sig = inspect.signature(selenium_helper.wait_and_find_element)
         timeout_param = sig.parameters['timeout']
-        assert timeout_param.default == 8, f"Expected timeout default 8, got {timeout_param.default}"
+        assert timeout_param.default == 10, f"Expected timeout default 10, got {timeout_param.default}"
     
     def test_list_flattening_optimization(self):
         """Test that the list comprehension approach works correctly."""
