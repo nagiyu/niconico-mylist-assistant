@@ -185,6 +185,8 @@ a.secondary {
     width: 100vw;
     margin-left: calc(50% - 50vw);
     padding: 0 16px;
+    /* Ensure proper scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
   }
   
   .buttonContainer {
