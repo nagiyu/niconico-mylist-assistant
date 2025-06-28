@@ -112,7 +112,11 @@ def regist(email, password, id_list):
         for future in futures:
             failed_id_lists.append(future.result())
 
-    # 1つのリストにまとめる (optimized flattening)
-    failed_id_list = [video_id for sublist in failed_id_lists for video_id in sublist]
+    # 1つのリストにまとめる
+    failed_id_list = []
+
+    for sublist in failed_id_lists:
+        for video_id in sublist:
+            failed_id_list.append(video_id)
 
     return failed_id_list
