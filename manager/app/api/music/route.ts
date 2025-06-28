@@ -114,6 +114,23 @@ export async function POST(req: NextRequest) {
   const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
   const now = new Date().toISOString();
 
+  // 同じMusicIDが既に存在するかチェック
+  const client = getDynamoClient();
+  const checkCommand = new ScanCommand({
+    TableName,
+    FilterExpression: "DataType = :datatype AND MusicID = :musicid AND UserID = :userid",
+    ExpressionAttributeValues: {
+      ":datatype": { S: "user" },
+      ":musicid": { S: body.music_id },
+      ":userid": { S: userId },
+    },
+  });
+
+  const existingResult = await client.send(checkCommand);
+  if (existingResult.Items && existingResult.Items.length > 0) {
+    return NextResponse.json({ error: "この楽曲ID（" + body.music_id + "）は既に追加されています。" }, { status: 400 });
+  }
+
   // サーバー側でUUID生成
   const music_common_id = randomUUID();
   const user_music_setting_id = randomUUID();
@@ -144,7 +161,6 @@ export async function POST(req: NextRequest) {
   };
 
   // PutItemCommandで2件保存（ID, DataTypeでユニーク）
-  const client = getDynamoClient();
   await client.send(new PutItemCommand({ TableName, Item: musicItem }));
   await client.send(new PutItemCommand({ TableName, Item: userItem }));
 
