@@ -222,6 +222,7 @@ export default function SignedInContent({ session }: { session: Session }) {
             <AutoDialog
                 open={autoDialogOpen}
                 onClose={() => setAutoDialogOpen(false)}
+                rowsCount={rows.filter(r => !r.skip).length}
                 onAuto={async ({ email, password, mylistTitle, count }) => {
                     // rowsからskip=falseのmusic_idをランダム抽出
                     const filtered = rows.filter(r => !r.skip);
