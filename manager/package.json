@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.835.0",
@@ -22,8 +21,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "9.30.0",
-    "eslint-config-next": "15.3.4",
     "typescript": "^5"
   }
 }
