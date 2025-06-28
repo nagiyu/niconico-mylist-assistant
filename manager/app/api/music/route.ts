@@ -114,9 +114,10 @@ export async function POST(req: NextRequest) {
   const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
   const now = new Date().toISOString();
 
-  // 同じMusicIDが既に存在するかチェック
   const client = getDynamoClient();
-  const checkCommand = new ScanCommand({
+  
+  // ユーザーが既にこの楽曲を追加済みかチェック
+  const userCheckCommand = new ScanCommand({
     TableName,
     FilterExpression: "DataType = :datatype AND MusicID = :musicid AND UserID = :userid",
     ExpressionAttributeValues: {
@@ -126,25 +127,45 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const existingResult = await client.send(checkCommand);
-  if (existingResult.Items && existingResult.Items.length > 0) {
+  const userResult = await client.send(userCheckCommand);
+  if (userResult.Items && userResult.Items.length > 0) {
     return NextResponse.json({ error: "この楽曲ID（" + body.music_id + "）は既に追加されています。" }, { status: 400 });
   }
 
+  // 音楽共通情報が既に存在するかチェック
+  const musicCheckCommand = new ScanCommand({
+    TableName,
+    FilterExpression: "DataType = :datatype AND MusicID = :musicid",
+    ExpressionAttributeValues: {
+      ":datatype": { S: "music" },
+      ":musicid": { S: body.music_id },
+    },
+  });
+
+  const musicResult = await client.send(musicCheckCommand);
+  const musicExists = musicResult.Items && musicResult.Items.length > 0;
+
   // サーバー側でUUID生成
-  const music_common_id = randomUUID();
+  let music_common_id: string;
   const user_music_setting_id = randomUUID();
 
-  // 音楽共通情報（DataType: "music"）
-  const musicItem = {
-    ID: { S: music_common_id },
-    DataType: { S: "music" },
-    Create: { S: now },
-    Update: { S: now },
-    Delete: { S: "" },
-    MusicID: { S: body.music_id },
-    Title: { S: body.title },
-  };
+  if (!musicExists) {
+    // 音楽共通情報が存在しない場合のみ作成
+    music_common_id = randomUUID();
+    const musicItem = {
+      ID: { S: music_common_id },
+      DataType: { S: "music" },
+      Create: { S: now },
+      Update: { S: now },
+      Delete: { S: "" },
+      MusicID: { S: body.music_id },
+      Title: { S: body.title },
+    };
+    await client.send(new PutItemCommand({ TableName, Item: musicItem }));
+  } else {
+    // 既存の音楽共通情報のIDを取得
+    music_common_id = musicResult.Items![0].ID!.S!;
+  }
 
   // ユーザー個人設定（DataType: "user"）
   const userItem = {
@@ -160,8 +181,6 @@ export async function POST(req: NextRequest) {
     memo: { S: body.memo ?? "" },
   };
 
-  // PutItemCommandで2件保存（ID, DataTypeでユニーク）
-  await client.send(new PutItemCommand({ TableName, Item: musicItem }));
   await client.send(new PutItemCommand({ TableName, Item: userItem }));
 
   // 生成したUUIDも返却
