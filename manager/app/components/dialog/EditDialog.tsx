@@ -7,6 +7,7 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useState, useEffect } from "react";
 
 import { EditData } from "@/app/types/EditData";
@@ -35,6 +36,8 @@ export default function EditDialog({
         music_id: "",
         title: "",
     });
+    const [isLoadingInfo, setIsLoadingInfo] = useState(false);
+    const [infoError, setInfoError] = useState<string>("");
 
     // Validation function
     const validateField = (field: string, value: string): string => {
@@ -66,8 +69,43 @@ export default function EditDialog({
     useEffect(() => {
         if (open) {
             setErrors({ music_id: "", title: "" });
+            setInfoError("");
         }
     }, [open]);
+
+    // Fetch video info from Niconico API
+    const handleGetInfo = async () => {
+        const musicId = editData?.music_id?.trim();
+        if (!musicId) {
+            setInfoError("IDを入力してください");
+            return;
+        }
+
+        setIsLoadingInfo(true);
+        setInfoError("");
+
+        try {
+            const response = await fetch(`/api/music/info?video_id=${encodeURIComponent(musicId)}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to fetch video info");
+            }
+
+            if (data.status === "success" && data.title) {
+                setEditData(prev => prev ? { ...prev, title: data.title } : prev);
+                // Clear title validation error if title was successfully fetched
+                setErrors(prev => ({ ...prev, title: "" }));
+            } else {
+                setInfoError(data.message || "情報の取得に失敗しました");
+            }
+        } catch (error) {
+            console.error("Error fetching video info:", error);
+            setInfoError("情報の取得中にエラーが発生しました");
+        } finally {
+            setIsLoadingInfo(false);
+        }
+    };
 
     const handleSave = () => {
         if (validateForm()) {
@@ -107,6 +145,11 @@ export default function EditDialog({
                     error={!!errors.title}
                     helperText={errors.title}
                 />
+                {infoError && (
+                    <div style={{ color: 'red', fontSize: '0.875rem', marginTop: '4px' }}>
+                        {infoError}
+                    </div>
+                )}
                 <FormGroup row>
                     <FormControlLabel
                         control={
@@ -147,6 +190,13 @@ export default function EditDialog({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>キャンセル</Button>
+                <Button 
+                    onClick={handleGetInfo}
+                    disabled={isLoadingInfo || !editData?.music_id?.trim()}
+                    startIcon={isLoadingInfo ? <CircularProgress size={16} /> : null}
+                >
+                    {isLoadingInfo ? "取得中..." : "Info"}
+                </Button>
                 <Button 
                     variant="contained" 
                     onClick={handleSave}
