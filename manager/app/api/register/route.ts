@@ -21,24 +21,27 @@ function encryptPassword(password: string, base64Key: string): string {
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, password, id_list }: IRegisterRequest = await req.json();
+        const { email, password, id_list, subscription }: IRegisterRequest = await req.json();
 
         // パスワード暗号化
         const encrypted_password = encryptPassword(password, SHARED_SECRET_KEY);
 
-        // Lambda呼び出し
-        const lambdaRes = await fetch(LAMBDA_ENDPOINT, {
+        // Lambda呼び出し（非同期・fire-and-forget）
+        fetch(LAMBDA_ENDPOINT, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 email,
                 password: encrypted_password,
                 id_list,
+                subscription: subscription ? JSON.stringify(subscription) : null,
             }),
+        }).catch((error) => {
+            console.error("Lambda invocation failed:", error);
         });
 
-        const data = await lambdaRes.json();
-        return NextResponse.json(data, { status: lambdaRes.status });
+        // 即座にレスポンスを返す（処理は非同期で続行）
+        return NextResponse.json({ message: "登録処理を開始しました。完了時に通知をお送りします。" }, { status: 202 });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
