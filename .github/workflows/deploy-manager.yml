@@ -37,7 +37,7 @@ jobs:
       uses: aws-actions/aws-secretsmanager-get-secrets@v2
       with:
         secret-ids: |
-          NiconicoMylistAssistant/Manager/Google
+          GOOGLE_OAUTH_SECRETS, NiconicoMylistAssistant/Manager/Google
         parse-json-secrets: true
 
     - name: Deploy
@@ -48,8 +48,8 @@ jobs:
         docker build \
           --build-arg NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }} \
           --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
-          --build-arg GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }} \
-          --build-arg GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_CLIENT_SECRET }} \
+          --build-arg GOOGLE_CLIENT_ID=${{ env.GOOGLE_OAUTH_SECRETS_GOOGLE_CLIENT_ID }} \
+          --build-arg GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_OAUTH_SECRETS_GOOGLE_CLIENT_SECRET }} \
           --build-arg DYNAMO_TABLE_NAME=${{ secrets.DYNAMO_TABLE_NAME }} \
           --build-arg REGISTER_LAMBDA_ENDPOINT=${{ secrets.REGISTER_LAMBDA_ENDPOINT }} \
           --build-arg SHARED_SECRET_KEY=${{ secrets.SHARED_SECRET_KEY }} \
