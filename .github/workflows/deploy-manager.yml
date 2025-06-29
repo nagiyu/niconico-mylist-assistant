@@ -33,6 +33,14 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
+    - name: Get Google secrets from AWS SecretsManager
+      id: google-secrets
+      run: |
+        GOOGLE_CLIENT_ID=$(aws secretsmanager get-secret-value --secret-id "NiconicoMylistAssistant/Manager/Google" --query 'fromjson(SecretString).GOOGLE_CLIENT_ID' --output text)
+        GOOGLE_CLIENT_SECRET=$(aws secretsmanager get-secret-value --secret-id "NiconicoMylistAssistant/Manager/Google" --query 'fromjson(SecretString).GOOGLE_CLIENT_SECRET' --output text)
+        echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> $GITHUB_OUTPUT
+        echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> $GITHUB_OUTPUT
+
     - name: Deploy
       run: |
         aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_MANAGER_REPOSITORY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
@@ -41,8 +49,8 @@ jobs:
         docker build \
           --build-arg NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }} \
           --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
-          --build-arg GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
-          --build-arg GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+          --build-arg GOOGLE_CLIENT_ID=${{ steps.google-secrets.outputs.GOOGLE_CLIENT_ID }} \
+          --build-arg GOOGLE_CLIENT_SECRET=${{ steps.google-secrets.outputs.GOOGLE_CLIENT_SECRET }} \
           --build-arg DYNAMO_TABLE_NAME=${{ secrets.DYNAMO_TABLE_NAME }} \
           --build-arg REGISTER_LAMBDA_ENDPOINT=${{ secrets.REGISTER_LAMBDA_ENDPOINT }} \
           --build-arg SHARED_SECRET_KEY=${{ secrets.SHARED_SECRET_KEY }} \
