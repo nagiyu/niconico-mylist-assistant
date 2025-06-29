@@ -23,18 +23,32 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument("--disable-backgrounding-occluded-windows")
     options.add_argument("--disable-renderer-backgrounding")
     options.add_argument("--disable-features=TranslateUI")
-    options.add_argument("--aggressive-cache-discard")
     options.add_argument("--memory-pressure-off")
     
-    # Set preferences to disable images and CSS
+    # Additional performance optimizations for media content (safer options)
+    options.add_argument("--disable-audio-output")
+    options.add_argument("--disable-background-media-suspend")
+    options.add_argument("--disable-default-apps")
+    
+    # Set preferences to disable media and other unnecessary content
     prefs = {
         "profile.managed_default_content_settings.images": 2,
         "profile.default_content_setting_values.notifications": 2,
-        "profile.default_content_settings.popups": 0
+        "profile.default_content_settings.popups": 0,
+        "profile.default_content_setting_values.media_stream": 2,
+        "profile.default_content_setting_values.geolocation": 2,
+        "profile.default_content_setting_values.plugins": 2,
+        "profile.managed_default_content_settings.media_stream": 2
     }
     options.add_experimental_option("prefs", prefs)
 
-    return webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options)
+    
+    # Set page load strategy to 'eager' for faster loading
+    # This loads DOM but doesn't wait for all resources (images, stylesheets, etc.)
+    driver.execute_cdp_cmd('Page.setLifecycleEventsEnabled', {'enabled': True})
+    
+    return driver
 
 
 def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 10) -> None:
