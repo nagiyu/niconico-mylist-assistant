@@ -15,19 +15,12 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument('--no-zygote')
     
-    # Performance optimizations - disable unnecessary features
+    # Performance optimizations - disable unnecessary features (keeping only stable options)
     options.add_argument("--disable-images")
     options.add_argument("--disable-plugins")
     options.add_argument("--disable-extensions")
-    options.add_argument("--disable-background-timer-throttling")
-    options.add_argument("--disable-backgrounding-occluded-windows")
-    options.add_argument("--disable-renderer-backgrounding")
     options.add_argument("--disable-features=TranslateUI")
-    options.add_argument("--memory-pressure-off")
-    
-    # Additional performance optimizations for media content (safer options)
     options.add_argument("--disable-audio-output")
-    options.add_argument("--disable-background-media-suspend")
     options.add_argument("--disable-default-apps")
     
     # Set preferences to disable media and other unnecessary content
@@ -44,9 +37,9 @@ def create_chrome_driver() -> WebDriver:
 
     driver = webdriver.Chrome(options=options)
     
-    # Set page load strategy to 'eager' for faster loading
-    # This loads DOM but doesn't wait for all resources (images, stylesheets, etc.)
-    driver.execute_cdp_cmd('Page.setLifecycleEventsEnabled', {'enabled': True})
+    # Set conservative timeouts to prevent connection issues
+    driver.set_page_load_timeout(120)  # 2 minutes for page loading
+    driver.implicitly_wait(10)  # 10 seconds for element finding
     
     return driver
 
