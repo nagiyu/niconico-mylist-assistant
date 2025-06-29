@@ -41,8 +41,7 @@ def remove_all_mylist(driver):
         selenium_helper.wait_and_click(driver, MYLIST_REMOVE2_XPATH)
         selenium_helper.wait_and_click(driver, MYLIST_REMOVE3_XPATH)
         selenium_helper.wait_and_accept_alert(driver)
-        # Reduced sleep from 1 second to 0.5 seconds
-        time.sleep(0.5)
+        time.sleep(1)
         driver.get(MYLIST_URL)
 
 def create_mylist(driver):
@@ -51,8 +50,7 @@ def create_mylist(driver):
     mylist_name = f"MyList_{current_time}"
     selenium_helper.wait_and_send_keys(driver, MYLIST_TITLE_INPUT_XPATH, mylist_name)
     selenium_helper.wait_and_click(driver, MYLIST_CREATE_CONFIRM_XPATH)
-    # Reduced sleep from 1 second to 0.5 seconds
-    time.sleep(0.5)
+    time.sleep(1)
     return mylist_name
 
 def add_videos_to_mylist(driver, id_list):
@@ -60,13 +58,11 @@ def add_videos_to_mylist(driver, id_list):
     for video_id in id_list:
         try:
             driver.get(f"{NICO_URL}/watch/{video_id}")
-            # Use faster wait for performance optimization
-            element = selenium_helper.wait_and_find_element_fast(driver, VIDEO_MENU_PARENT_XPATH)
+            element = selenium_helper.wait_and_find_element(driver, VIDEO_MENU_PARENT_XPATH)
             selenium_helper.wait_and_click_in_element(element, VIDEO_MENU_BUTTON_XPATH)
-            selenium_helper.wait_and_click_fast(driver, VIDEO_ADD_TO_MYLIST_XPATH)
-            selenium_helper.wait_and_click_fast(driver, VIDEO_MYLIST_SELECT_XPATH)
-            # Reduced sleep from 1 second to 0.3 seconds for faster processing
-            time.sleep(0.3)
+            selenium_helper.wait_and_click(driver, VIDEO_ADD_TO_MYLIST_XPATH)
+            selenium_helper.wait_and_click(driver, VIDEO_MYLIST_SELECT_XPATH)
+            time.sleep(1)
         except Exception:
             selenium_helper.save_screenshot_to_s3(driver)
             failed_id_list.append(video_id)
@@ -86,7 +82,7 @@ def distribute_id_list(id_list, n):
 
 def process_regist(email, password, id_list):
     driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1024, 576)  # Further reduced window size for better performance
+    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
@@ -95,7 +91,7 @@ def process_regist(email, password, id_list):
 
 def regist(email, password, id_list):
     driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1024, 576)  # Further reduced window size for better performance
+    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     remove_all_mylist(driver)
     create_mylist(driver)

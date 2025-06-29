@@ -127,23 +127,3 @@ def wait_and_find_element_in_element(element: WebElement, xpath: str, timeout: i
         lambda e: e.find_element("xpath", xpath).is_displayed()
     )
     return element.find_element("xpath", xpath)
-
-
-def wait_and_click_fast(driver: WebDriver, xpath: str, timeout: int = 5) -> None:
-    """
-    Fast version of wait_and_click with shorter timeout for performance optimization.
-    """
-    WebDriverWait(driver, timeout).until(
-        lambda d: d.find_element("xpath", xpath).is_displayed()
-    )
-    driver.find_element("xpath", xpath).click()
-
-
-def wait_and_find_element_fast(driver: WebDriver, xpath: str, timeout: int = 5) -> WebElement:
-    """
-    Fast version of wait_and_find_element with shorter timeout for performance optimization.
-    """
-    WebDriverWait(driver, timeout).until(
-        lambda d: d.find_element("xpath", xpath).is_displayed()
-    )
-    return driver.find_element("xpath", xpath)
