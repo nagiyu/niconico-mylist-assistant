@@ -25,6 +25,7 @@ import { IMusic } from "@/app/interface/IMusic";
 import { DeleteTarget } from "@/app/types/DeleteTarget";
 import { useEffect } from "react";
 import { IRegisterRequest } from "@/app/interface/IRegisterRequest";
+import { useNotificationManager } from "@/hooks/notification-manager";
 
 interface BulkImportResponse {
     success: number;
@@ -54,6 +55,9 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     const [rows, setRows] = useState<IMusic[]>([]);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+
+    // Notification manager hook
+    const { subscription } = useNotificationManager();
 
     // APIからデータ取得する関数
     const fetchMusic = async () => {
@@ -356,7 +360,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                     const id_list = shuffled.slice(0, count).map(r => r.music_id);
 
                     try {
-                        const reqBody: IRegisterRequest = { email, password, id_list };
+                        const reqBody: IRegisterRequest = { email, password, id_list, subscription };
                         const res = await fetch("/api/register", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -364,7 +368,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         });
                         const data = await res.json();
                         if (res.ok) {
-                            alert("自動処理成功: " + JSON.stringify(data));
+                            alert("自動登録処理を開始しました。完了時に通知をお送りします。");
                         } else {
                             alert("自動処理失敗: " + JSON.stringify(data));
                         }

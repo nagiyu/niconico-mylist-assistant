@@ -12,7 +12,8 @@
     "MYLIST_EMAIL": "",
     "MYLIST_PASSWORD": "",
     "MYLIST_ID_LIST": "[]",
-    "SHARED_SECRET_KEY": ""
+    "SHARED_SECRET_KEY": "",
+    "NOTIFICATION_API_ENDPOINT": ""
   },
   "customizations": {
     "vscode": {
