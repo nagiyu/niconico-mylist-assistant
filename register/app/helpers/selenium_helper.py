@@ -15,23 +15,12 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument('--no-zygote')
     
-    # Timeout configurations to prevent ReadTimeoutError
-    options.add_argument("--remote-debugging-timeout=300")
-    options.add_argument("--session-timeout=300")
-    
-    # Performance optimizations - disable unnecessary features
+    # Performance optimizations - disable unnecessary features (keeping only stable options)
     options.add_argument("--disable-images")
     options.add_argument("--disable-plugins")
     options.add_argument("--disable-extensions")
-    options.add_argument("--disable-background-timer-throttling")
-    options.add_argument("--disable-backgrounding-occluded-windows")
-    options.add_argument("--disable-renderer-backgrounding")
     options.add_argument("--disable-features=TranslateUI")
-    options.add_argument("--memory-pressure-off")
-    
-    # Additional performance optimizations for media content (safer options)
     options.add_argument("--disable-audio-output")
-    options.add_argument("--disable-background-media-suspend")
     options.add_argument("--disable-default-apps")
     
     # Set preferences to disable media and other unnecessary content
@@ -48,19 +37,14 @@ def create_chrome_driver() -> WebDriver:
 
     driver = webdriver.Chrome(options=options)
     
-    # Set timeouts to prevent ReadTimeoutError
-    driver.set_page_load_timeout(300)  # 5 minutes for page loading
-    driver.implicitly_wait(30)  # 30 seconds for element finding
-    driver.set_script_timeout(120)  # 2 minutes for script execution
-    
-    # Set page load strategy to 'eager' for faster loading
-    # This loads DOM but doesn't wait for all resources (images, stylesheets, etc.)
-    driver.execute_cdp_cmd('Page.setLifecycleEventsEnabled', {'enabled': True})
+    # Set conservative timeouts to prevent connection issues
+    driver.set_page_load_timeout(120)  # 2 minutes for page loading
+    driver.implicitly_wait(10)  # 10 seconds for element finding
     
     return driver
 
 
-def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 30) -> None:
+def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 10) -> None:
     """
     Wait until the element specified by xpath is visible, then click it.
     """
@@ -70,7 +54,7 @@ def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 30) -> None:
     driver.find_element("xpath", xpath).click()
 
 
-def wait_and_click_in_element(element: WebElement, xpath: str, timeout: int = 30) -> None:
+def wait_and_click_in_element(element: WebElement, xpath: str, timeout: int = 10) -> None:
     """
     指定したelementの下でxpathの要素が表示されるまで待ち、クリックする。
     """
@@ -80,7 +64,7 @@ def wait_and_click_in_element(element: WebElement, xpath: str, timeout: int = 30
     element.find_element("xpath", xpath).click()
 
 
-def wait_and_send_keys(driver: WebDriver, xpath: str, keys: str, timeout: int = 30) -> None:
+def wait_and_send_keys(driver: WebDriver, xpath: str, keys: str, timeout: int = 10) -> None:
     """
     Wait until the element specified by xpath is visible, then send keys to it.
     """
@@ -91,7 +75,7 @@ def wait_and_send_keys(driver: WebDriver, xpath: str, keys: str, timeout: int = 
     driver.find_element("xpath", xpath).send_keys(keys)
 
 
-def wait_and_accept_alert(driver: WebDriver, timeout: int = 30) -> None:
+def wait_and_accept_alert(driver: WebDriver, timeout: int = 10) -> None:
     """
     Wait until a JavaScript alert/confirm dialog is present, then accept (OK) it.
     """
@@ -118,7 +102,7 @@ def save_screenshot_to_s3(driver: WebDriver) -> str:
     return s3_url
 
 
-def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 30) -> WebElement:
+def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 10) -> WebElement:
     """
     指定したxpathの要素が表示されるまで待ち、その要素を返す。
     """
@@ -128,7 +112,7 @@ def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 30) -> W
     return driver.find_element("xpath", xpath)
 
 
-def wait_and_find_element_in_element(element: WebElement, xpath: str, timeout: int = 30) -> WebElement:
+def wait_and_find_element_in_element(element: WebElement, xpath: str, timeout: int = 10) -> WebElement:
     """
     指定したelementの下でxpathの要素が表示されるまで待ち、その要素を返す。
     """
