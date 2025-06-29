@@ -18,6 +18,7 @@ import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
 import AutoDialog from "@/app/components/dialog/AutoDialog";
 import BulkImportDialog from "@/app/components/dialog/BulkImportDialog";
+import SettingsDialog from "@/app/components/dialog/SettingsDialog";
 
 import { Session } from "next-auth";
 import { IMusic } from "@/app/interface/IMusic";
@@ -52,6 +53,7 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
 
     const [rows, setRows] = useState<IMusic[]>([]);
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
     // APIからデータ取得する関数
     const fetchMusic = async () => {
@@ -77,11 +79,11 @@ export default function SignedInContent({ session }: { session: Session }) {
                 case 'create':
                     return [...prevRows, updatedItem];
                 case 'update':
-                    return prevRows.map(row => 
+                    return prevRows.map(row =>
                         row.music_common_id === updatedItem.music_common_id ? updatedItem : row
                     );
                 case 'delete':
-                    return prevRows.filter(row => 
+                    return prevRows.filter(row =>
                         row.music_common_id !== updatedItem.music_common_id
                     );
                 default:
@@ -147,10 +149,10 @@ export default function SignedInContent({ session }: { session: Session }) {
             alert(errorData.error || "エラーが発生しました");
             return;
         }
-        
+
         // レスポンスデータを取得
         const responseData = await res.json();
-        
+
         // ローカルキャッシュを更新（DynamoDBを再取得しない）
         if (method === "POST") {
             // 新規作成の場合、サーバーから返された ID を使用
@@ -164,7 +166,7 @@ export default function SignedInContent({ session }: { session: Session }) {
             // 更新の場合、既存のeditDataを使用
             updateLocalCache(editData, 'update');
         }
-        
+
         setDialogOpen(false);
         setEditData(null);
     };
@@ -192,7 +194,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                 signOut();
                 return;
             }
-            
+
             // 削除成功時、ローカルキャッシュから削除（DynamoDBを再取得しない）
             if (res.ok && row) {
                 updateLocalCache(row, 'delete');
@@ -210,22 +212,22 @@ export default function SignedInContent({ session }: { session: Session }) {
             },
             body: JSON.stringify({ items }),
         });
-        
+
         if (res.status === 401) {
             signOut();
             return;
         }
 
         const result: BulkImportResponse = await res.json();
-        
+
         // Show results to user
         const message = `インポート完了:
 成功: ${result.success}件
 スキップ: ${result.skip}件
 失敗: ${result.failure}件`;
-        
+
         alert(message);
-        
+
         // インポートが成功した場合、ローカルキャッシュに成功したアイテムを追加
         // 今度はサーバーから返された実際のIDを使用
         if (result.success > 0 && result.successfulItems) {
@@ -265,11 +267,12 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                         <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync}>Sync</Button>
+                        <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
                     </div>
                     <div className={styles.tableWrapper}>
-                        <TableContainer component={Paper} sx={{ 
-                            maxWidth: { xs: 'none', sm: 600 }, 
-                            margin: { xs: '24px 0', sm: '24px auto' } 
+                        <TableContainer component={Paper} sx={{
+                            maxWidth: { xs: 'none', sm: 600 },
+                            margin: { xs: '24px 0', sm: '24px auto' }
                         }}>
                             <Table size="small">
                                 <TableHead>
@@ -370,6 +373,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                     }
                     setAutoDialogOpen(false);
                 }}
+            />
+            <SettingsDialog
+                open={settingsDialogOpen}
+                onClose={() => setSettingsDialogOpen(false)}
             />
         </>
     );

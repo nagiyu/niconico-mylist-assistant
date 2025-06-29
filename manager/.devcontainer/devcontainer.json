@@ -14,7 +14,9 @@
     "GOOGLE_CLIENT_SECRET": "",
     "DYNAMO_TABLE_NAME": "",
     "REGISTER_LAMBDA_ENDPOINT": "",
-    "SHARED_SECRET_KEY": ""
+    "SHARED_SECRET_KEY": "",
+    "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "",
+    "VAPID_PRIVATE_KEY": ""
   },
   "customizations": {
     "vscode": {
