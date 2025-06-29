@@ -210,10 +210,28 @@ export default function SignedInContent({ session }: { session: Session }) {
         
         alert(message);
         
-        // インポートが成功した場合のみ同期してデータを再取得
-        // （bulk-importでは複数のアイテムが処理されるため、個別にキャッシュ更新するより全取得が安全）
-        if (result.success > 0) {
-            await fetchMusic();
+        // インポートが成功した場合、ローカルキャッシュに成功したアイテムを追加
+        // bulk-importでは音楽共通データのみ作成され、ユーザー設定は作成されないため、
+        // デフォルト値でキャッシュに追加する
+        if (result.success > 0 && result.details?.success) {
+            const successfulItems = items.filter(item => 
+                result.details.success.includes(item.music_id)
+            );
+            
+            successfulItems.forEach(item => {
+                // 新しいアイテムをローカルキャッシュに追加
+                // IDは一意性を保つため、タイムスタンプとランダム値を組み合わせる
+                const newItem: IMusic = {
+                    music_common_id: `import-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    user_music_setting_id: "", // bulk-importでは個人設定は未作成
+                    music_id: item.music_id,
+                    title: item.title,
+                    favorite: false,
+                    skip: false,
+                    memo: "",
+                };
+                updateLocalCache(newItem, 'create');
+            });
         }
     };
 
