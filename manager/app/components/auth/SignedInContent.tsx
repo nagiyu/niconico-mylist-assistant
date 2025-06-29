@@ -49,6 +49,31 @@ export default function SignedInContent({ session }: { session: Session }) {
         setRows(data);
     };
 
+    // 同期ボタン用の関数
+    const handleSync = async () => {
+        await fetchMusic();
+    };
+
+    // ローカルキャッシュ更新用のヘルパー関数
+    const updateLocalCache = (updatedItem: IMusic, operation: 'create' | 'update' | 'delete') => {
+        setRows(prevRows => {
+            switch (operation) {
+                case 'create':
+                    return [...prevRows, updatedItem];
+                case 'update':
+                    return prevRows.map(row => 
+                        row.music_common_id === updatedItem.music_common_id ? updatedItem : row
+                    );
+                case 'delete':
+                    return prevRows.filter(row => 
+                        row.music_common_id !== updatedItem.music_common_id
+                    );
+                default:
+                    return prevRows;
+            }
+        });
+    };
+
     // 初回マウント時に API から取得
     useEffect(() => {
         fetchMusic();
@@ -106,9 +131,26 @@ export default function SignedInContent({ session }: { session: Session }) {
             alert(errorData.error || "エラーが発生しました");
             return;
         }
+        
+        // レスポンスデータを取得
+        const responseData = await res.json();
+        
+        // ローカルキャッシュを更新（DynamoDBを再取得しない）
+        if (method === "POST") {
+            // 新規作成の場合、サーバーから返された ID を使用
+            const newItem: IMusic = {
+                ...editData,
+                music_common_id: responseData.music_common_id,
+                user_music_setting_id: responseData.user_music_setting_id,
+            };
+            updateLocalCache(newItem, 'create');
+        } else {
+            // 更新の場合、既存のeditDataを使用
+            updateLocalCache(editData, 'update');
+        }
+        
         setDialogOpen(false);
         setEditData(null);
-        await fetchMusic();
     };
 
     const handleDeleteDialogClose = () => {
@@ -134,10 +176,14 @@ export default function SignedInContent({ session }: { session: Session }) {
                 signOut();
                 return;
             }
+            
+            // 削除成功時、ローカルキャッシュから削除（DynamoDBを再取得しない）
+            if (res.ok && row) {
+                updateLocalCache(row, 'delete');
+            }
         }
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
-        await fetchMusic();
     };
 
     const handleBulkImport = async (items: { music_id: string; title: string }[]) => {
@@ -164,8 +210,11 @@ export default function SignedInContent({ session }: { session: Session }) {
         
         alert(message);
         
-        // Refresh the music list
-        await fetchMusic();
+        // インポートが成功した場合のみ同期してデータを再取得
+        // （bulk-importでは複数のアイテムが処理されるため、個別にキャッシュ更新するより全取得が安全）
+        if (result.success > 0) {
+            await fetchMusic();
+        }
     };
 
     return (
@@ -187,6 +236,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
+                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync}>Sync</Button>
                     </div>
                     <div className={styles.tableWrapper}>
                         <TableContainer component={Paper} sx={{ 
