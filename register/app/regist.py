@@ -21,7 +21,7 @@ VIDEO_MENU_PARENT_XPATH = '//*[@id="root"]/div[1]/main/div[2]/section/div[1]/div
 VIDEO_MENU_BUTTON_XPATH = './/button[@aria-label="メニュー"]'
 VIDEO_ADD_TO_MYLIST_XPATH = '//button[text()="マイリストに追加"]'
 VIDEO_MYLIST_SELECT_XPATH = '//*[@id="root"]/div[1]/main/div[2]/section/div[3]/div[2]/section/div/ul/li[2]/button'
-MAX_THREADS = 5
+MAX_THREADS = 3
 
 def login(driver, email, password):
     driver.get(NICO_URL)
