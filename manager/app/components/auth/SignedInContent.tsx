@@ -25,6 +25,22 @@ import { DeleteTarget } from "@/app/types/DeleteTarget";
 import { useEffect } from "react";
 import { IRegisterRequest } from "@/app/interface/IRegisterRequest";
 
+interface BulkImportResponse {
+    success: number;
+    failure: number;
+    skip: number;
+    details: {
+        success: string[];
+        failure: string[];
+        skip: string[];
+    };
+    successfulItems?: {
+        music_id: string;
+        music_common_id: string;
+        title: string;
+    }[];
+}
+
 export default function SignedInContent({ session }: { session: Session }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editData, setEditData] = useState<IMusic | null>(null);
@@ -200,7 +216,7 @@ export default function SignedInContent({ session }: { session: Session }) {
             return;
         }
 
-        const result = await res.json();
+        const result: BulkImportResponse = await res.json();
         
         // Show results to user
         const message = `インポート完了:
@@ -211,18 +227,12 @@ export default function SignedInContent({ session }: { session: Session }) {
         alert(message);
         
         // インポートが成功した場合、ローカルキャッシュに成功したアイテムを追加
-        // bulk-importでは音楽共通データのみ作成され、ユーザー設定は作成されないため、
-        // デフォルト値でキャッシュに追加する
-        if (result.success > 0 && result.details?.success) {
-            const successfulItems = items.filter(item => 
-                result.details.success.includes(item.music_id)
-            );
-            
-            successfulItems.forEach(item => {
+        // 今度はサーバーから返された実際のIDを使用
+        if (result.success > 0 && result.successfulItems) {
+            result.successfulItems.forEach(item => {
                 // 新しいアイテムをローカルキャッシュに追加
-                // IDは一意性を保つため、タイムスタンプとランダム値を組み合わせる
                 const newItem: IMusic = {
-                    music_common_id: `import-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    music_common_id: item.music_common_id,
                     user_music_setting_id: "", // bulk-importでは個人設定は未作成
                     music_id: item.music_id,
                     title: item.title,
