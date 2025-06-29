@@ -36,8 +36,8 @@ jobs:
     - name: Get Google secrets from AWS SecretsManager
       id: google-secrets
       run: |
-        GOOGLE_CLIENT_ID=$(aws secretsmanager get-secret-value --secret-id "NiconicoMylistAssistant/Manager/Google" --query 'fromjson(SecretString).GOOGLE_CLIENT_ID' --output text)
-        GOOGLE_CLIENT_SECRET=$(aws secretsmanager get-secret-value --secret-id "NiconicoMylistAssistant/Manager/Google" --query 'fromjson(SecretString).GOOGLE_CLIENT_SECRET' --output text)
+        GOOGLE_CLIENT_ID=$(aws secretsmanager get-secret-value --secret-id "NiconicoMylistAssistant/Manager/Google" --output json | jq -r '.SecretString | fromjson | .GOOGLE_CLIENT_ID')
+        GOOGLE_CLIENT_SECRET=$(aws secretsmanager get-secret-value --secret-id "NiconicoMylistAssistant/Manager/Google" --output json | jq -r '.SecretString | fromjson | .GOOGLE_CLIENT_SECRET')
         echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> $GITHUB_OUTPUT
         echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> $GITHUB_OUTPUT
 
