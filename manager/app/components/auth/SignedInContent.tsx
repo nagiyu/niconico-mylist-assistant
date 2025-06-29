@@ -13,6 +13,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useState } from "react";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
@@ -54,6 +55,7 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     const [rows, setRows] = useState<IMusic[]>([]);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     // APIからデータ取得する関数
     const fetchMusic = async () => {
@@ -69,7 +71,12 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     // 同期ボタン用の関数
     const handleSync = async () => {
-        await fetchMusic();
+        setIsSyncing(true);
+        try {
+            await fetchMusic();
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     // ローカルキャッシュ更新用のヘルパー関数
@@ -266,7 +273,9 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
-                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync}>Sync</Button>
+                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
+                            {isSyncing ? "同期中..." : "Sync"}
+                        </Button>
                         <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
                     </div>
                     <div className={styles.tableWrapper}>
