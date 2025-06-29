@@ -43,7 +43,7 @@ jobs:
 
     - name: Rewrite sw.js endpoint from secrets
       run: |
-        sed -i 's|http://localhost:3000|${{ secrets.NOTIFICATION_API_ENDPOINT }}|g' manager/public/sw.js
+        sed -i 's|http://localhost:3000|${{ secrets.MANAGER_BASE_URL }}|g' manager/public/sw.js
 
     - name: Deploy
       run: |
