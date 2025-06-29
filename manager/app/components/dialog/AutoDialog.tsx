@@ -40,6 +40,7 @@ export default function AutoDialog({
     
     // Use rowsCount as default, but max 100
     const defaultCount = Math.min(rowsCount, 100);
+    const maxCount = Math.min(rowsCount, 100);
     const [count, setCount] = useState(defaultCount);
 
     const [errors, setErrors] = useState<ValidationErrors>({
@@ -77,8 +78,8 @@ export default function AutoDialog({
                 if (!value || isNaN(num)) {
                     return "カウントは必須です";
                 }
-                if (num < 1 || num > 100) {
-                    return "カウントは1〜100の範囲で入力してください";
+                if (num < 1 || num > maxCount) {
+                    return `カウントは1〜${maxCount}の範囲で入力してください`;
                 }
                 break;
         }
@@ -177,7 +178,7 @@ export default function AutoDialog({
                         setCount(value);
                         handleFieldChange("count", value);
                     }}
-                    inputProps={{ min: 1, max: 100 }}
+                    inputProps={{ min: 1, max: maxCount }}
                     error={!!errors.count}
                     helperText={errors.count}
                 />
@@ -190,7 +191,7 @@ export default function AutoDialog({
                     onClick={handleAuto}
                     disabled={
                         !!errors.email || !!errors.password || !!errors.mylistTitle || !!errors.count ||
-                        !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > 100
+                        !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > maxCount
                     }
                 >
                     実行
