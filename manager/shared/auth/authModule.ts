@@ -1,4 +1,4 @@
-import { IAccessToken } from "@shared/auth/IAccessToken";
+import { IAccessToken } from "./IAccessToken";
 
 declare module "next-auth" {
   interface Session {

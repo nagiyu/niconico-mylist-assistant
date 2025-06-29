@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/config/authOptions";
-
-// セッションからGoogleアクセストークンを取得し、ユーザーIDを取得
-async function getGoogleUserIdFromSession(): Promise<string> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.tokens?.find(t => t.provider === "google")?.accessToken;
-  if (!accessToken) return "";
-  const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) return "";
-  const data = await res.json();
-  return data.sub || "";
-}
+import { getGoogleUserIdFromSession } from "@shared/auth";
 
 interface VideoInfo {
   status: "success" | "failure";
