@@ -192,5 +192,7 @@ a.secondary {
   .buttonContainer {
     margin: 24px 16px 8px 16px;
     max-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
