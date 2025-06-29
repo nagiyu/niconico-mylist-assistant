@@ -14,6 +14,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useState, useEffect } from "react";
 
 interface BulkImportRow {
@@ -22,6 +23,7 @@ interface BulkImportRow {
     title: string;
     music_id_error?: string;
     title_error?: string;
+    isLoadingTitle?: boolean;
 }
 
 interface BulkImportDialogProps {
@@ -49,7 +51,45 @@ export default function BulkImportDialog({
         }
     }, [rows, nextId]);
 
-    const updateRow = (id: number, field: keyof Omit<BulkImportRow, 'id' | 'music_id_error' | 'title_error'>, value: string) => {
+    // Fetch title info from Niconico API
+    const fetchTitleInfo = async (rowId: number, musicId: string) => {
+        if (!musicId.trim()) return;
+
+        // Set loading state for this row
+        setRows(prev => prev.map(row => 
+            row.id === rowId ? { ...row, isLoadingTitle: true } : row
+        ));
+
+        try {
+            const response = await fetch(`/api/music/info?video_id=${encodeURIComponent(musicId)}`);
+            const data = await response.json();
+
+            if (response.ok && data.status === "success" && data.title) {
+                // Update title and clear any title error
+                setRows(prev => prev.map(row => {
+                    if (row.id === rowId) {
+                        const updatedRow = { ...row, title: data.title, isLoadingTitle: false };
+                        delete updatedRow.title_error;
+                        return updatedRow;
+                    }
+                    return row;
+                }));
+            } else {
+                // Failed to fetch, just clear loading state
+                setRows(prev => prev.map(row => 
+                    row.id === rowId ? { ...row, isLoadingTitle: false } : row
+                ));
+            }
+        } catch (error) {
+            console.error("Error fetching video info:", error);
+            // Clear loading state on error
+            setRows(prev => prev.map(row => 
+                row.id === rowId ? { ...row, isLoadingTitle: false } : row
+            ));
+        }
+    };
+
+    const updateRow = (id: number, field: keyof Omit<BulkImportRow, 'id' | 'music_id_error' | 'title_error' | 'isLoadingTitle'>, value: string) => {
         setRows(prev => prev.map(row => {
             if (row.id === id) {
                 const updatedRow = { ...row, [field]: value };
@@ -61,17 +101,33 @@ export default function BulkImportDialog({
                     } else {
                         delete updatedRow.music_id_error;
                     }
+                    
+                    // Auto-fetch title when music_id is entered and title is empty (but not loading)
+                    if (value.trim() !== '' && row.title.trim() === '' && !row.isLoadingTitle) {
+                        // Use setTimeout to ensure state update happens first
+                        setTimeout(() => {
+                            fetchTitleInfo(id, value.trim());
+                        }, 100);
+                    }
                 } else if (field === 'title') {
                     if (value.trim() === '' && row.music_id.trim() !== '') {
                         updatedRow.title_error = 'タイトルは必須です';
                     } else {
                         delete updatedRow.title_error;
                     }
+                    
+                    // Cancel loading if user manually enters title
+                    if (value.trim() !== '' && row.isLoadingTitle) {
+                        updatedRow.isLoadingTitle = false;
+                    }
                 }
                 
                 // Re-validate the other field when one changes
                 if (field === 'music_id' && value.trim() !== '' && row.title.trim() === '') {
-                    updatedRow.title_error = 'タイトルは必須です';
+                    // Don't set title error if we're about to auto-fetch
+                    if (!row.isLoadingTitle) {
+                        updatedRow.title_error = 'タイトルは必須です';
+                    }
                 } else if (field === 'title' && value.trim() !== '' && row.music_id.trim() === '') {
                     updatedRow.music_id_error = 'IDは必須です';
                 }
@@ -202,7 +258,7 @@ export default function BulkImportDialog({
                 <DialogTitle>一括インポート</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                        IDとタイトルを入力してください。空の行は自動的に削除されますが、新規入力用に最低1行は残します。
+                        IDを入力すると自動でタイトルが取得されます。IDとタイトルを入力してください。空の行は自動的に削除されますが、新規入力用に最低1行は残します。
                     </Typography>
                     <TableContainer 
                         component={Paper} 
@@ -258,10 +314,15 @@ export default function BulkImportDialog({
                                                 onChange={(e) => updateRow(row.id, 'title', e.target.value)}
                                                 onBlur={cleanupRows}
                                                 placeholder="楽曲タイトル"
-                                                disabled={importing}
+                                                disabled={importing || row.isLoadingTitle}
                                                 variant="outlined"
                                                 error={!!row.title_error}
                                                 helperText={row.title_error}
+                                                InputProps={{
+                                                    endAdornment: row.isLoadingTitle ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : null,
+                                                }}
                                                 sx={{
                                                     '& .MuiFormHelperText-root': {
                                                         fontSize: '0.75rem'
