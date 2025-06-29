@@ -22,6 +22,11 @@ interface BulkImportResponse {
     failure: string[];
     skip: string[];
   };
+  successfulItems: {
+    music_id: string;
+    music_common_id: string;
+    title: string;
+  }[];
 }
 
 export async function POST(req: NextRequest) {
@@ -57,7 +62,8 @@ export async function POST(req: NextRequest) {
       success: [],
       failure: [],
       skip: []
-    }
+    },
+    successfulItems: []
   };
 
   // Process each item
@@ -86,6 +92,11 @@ export async function POST(req: NextRequest) {
       
       result.success++;
       result.details.success.push(item.music_id);
+      result.successfulItems.push({
+        music_id: item.music_id,
+        music_common_id: music_common_id,
+        title: item.title
+      });
       
       // Add to existing set to avoid duplicates within the same batch
       existingMusicIds.add(item.music_id);

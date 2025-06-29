@@ -25,6 +25,22 @@ import { DeleteTarget } from "@/app/types/DeleteTarget";
 import { useEffect } from "react";
 import { IRegisterRequest } from "@/app/interface/IRegisterRequest";
 
+interface BulkImportResponse {
+    success: number;
+    failure: number;
+    skip: number;
+    details: {
+        success: string[];
+        failure: string[];
+        skip: string[];
+    };
+    successfulItems?: {
+        music_id: string;
+        music_common_id: string;
+        title: string;
+    }[];
+}
+
 export default function SignedInContent({ session }: { session: Session }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editData, setEditData] = useState<IMusic | null>(null);
@@ -47,6 +63,31 @@ export default function SignedInContent({ session }: { session: Session }) {
         }
         const data = await res.json();
         setRows(data);
+    };
+
+    // 同期ボタン用の関数
+    const handleSync = async () => {
+        await fetchMusic();
+    };
+
+    // ローカルキャッシュ更新用のヘルパー関数
+    const updateLocalCache = (updatedItem: IMusic, operation: 'create' | 'update' | 'delete') => {
+        setRows(prevRows => {
+            switch (operation) {
+                case 'create':
+                    return [...prevRows, updatedItem];
+                case 'update':
+                    return prevRows.map(row => 
+                        row.music_common_id === updatedItem.music_common_id ? updatedItem : row
+                    );
+                case 'delete':
+                    return prevRows.filter(row => 
+                        row.music_common_id !== updatedItem.music_common_id
+                    );
+                default:
+                    return prevRows;
+            }
+        });
     };
 
     // 初回マウント時に API から取得
@@ -106,9 +147,26 @@ export default function SignedInContent({ session }: { session: Session }) {
             alert(errorData.error || "エラーが発生しました");
             return;
         }
+        
+        // レスポンスデータを取得
+        const responseData = await res.json();
+        
+        // ローカルキャッシュを更新（DynamoDBを再取得しない）
+        if (method === "POST") {
+            // 新規作成の場合、サーバーから返された ID を使用
+            const newItem: IMusic = {
+                ...editData,
+                music_common_id: responseData.music_common_id,
+                user_music_setting_id: responseData.user_music_setting_id,
+            };
+            updateLocalCache(newItem, 'create');
+        } else {
+            // 更新の場合、既存のeditDataを使用
+            updateLocalCache(editData, 'update');
+        }
+        
         setDialogOpen(false);
         setEditData(null);
-        await fetchMusic();
     };
 
     const handleDeleteDialogClose = () => {
@@ -134,10 +192,14 @@ export default function SignedInContent({ session }: { session: Session }) {
                 signOut();
                 return;
             }
+            
+            // 削除成功時、ローカルキャッシュから削除（DynamoDBを再取得しない）
+            if (res.ok && row) {
+                updateLocalCache(row, 'delete');
+            }
         }
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
-        await fetchMusic();
     };
 
     const handleBulkImport = async (items: { music_id: string; title: string }[]) => {
@@ -154,7 +216,7 @@ export default function SignedInContent({ session }: { session: Session }) {
             return;
         }
 
-        const result = await res.json();
+        const result: BulkImportResponse = await res.json();
         
         // Show results to user
         const message = `インポート完了:
@@ -164,8 +226,23 @@ export default function SignedInContent({ session }: { session: Session }) {
         
         alert(message);
         
-        // Refresh the music list
-        await fetchMusic();
+        // インポートが成功した場合、ローカルキャッシュに成功したアイテムを追加
+        // 今度はサーバーから返された実際のIDを使用
+        if (result.success > 0 && result.successfulItems) {
+            result.successfulItems.forEach(item => {
+                // 新しいアイテムをローカルキャッシュに追加
+                const newItem: IMusic = {
+                    music_common_id: item.music_common_id,
+                    user_music_setting_id: "", // bulk-importでは個人設定は未作成
+                    music_id: item.music_id,
+                    title: item.title,
+                    favorite: false,
+                    skip: false,
+                    memo: "",
+                };
+                updateLocalCache(newItem, 'create');
+            });
+        }
     };
 
     return (
@@ -187,6 +264,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
+                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync}>Sync</Button>
                     </div>
                     <div className={styles.tableWrapper}>
                         <TableContainer component={Paper} sx={{ 
