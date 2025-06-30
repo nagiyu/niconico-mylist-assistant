@@ -7,14 +7,29 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import Avatar from "@mui/material/Avatar";
 import { useState, useEffect, useRef } from "react";
 import styles from "./SearchDialog.module.css";
-
 
 interface SearchDialogProps {
     open: boolean;
     onClose: () => void;
     onRegister: (data: { music_id: string; title: string }) => void;
+}
+
+interface SearchResult {
+    contentId: string;
+    title: string;
+    description: string;
+    tags: string;
+    viewCounter: number;
+    startTime: string;
+    thumbnailUrl: string;
 }
 
 interface ValidationErrors {
@@ -30,13 +45,16 @@ export default function SearchDialog({
     const [musicId, setMusicId] = useState("");
     const [title, setTitle] = useState("");
     const [url, setUrl] = useState("");
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState("");
     const [errors, setErrors] = useState<ValidationErrors>({
         music_id: "",
         title: "",
     });
     const [isLoadingInfo, setIsLoadingInfo] = useState(false);
     const [infoError, setInfoError] = useState<string>("");
-    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // Validation function
     const validateField = (field: string, value: string): string => {
@@ -70,6 +88,9 @@ export default function SearchDialog({
             setMusicId("");
             setTitle("");
             setUrl("");
+            setSearchKeyword("");
+            setSearchResults([]);
+            setSearchError("");
             setErrors({ music_id: "", title: "" });
             setInfoError("");
         }
@@ -171,6 +192,49 @@ export default function SearchDialog({
         }
     };
 
+    // Search videos using Niconico search API
+    const handleSearch = async () => {
+        const keyword = searchKeyword.trim();
+        if (!keyword) {
+            setSearchError("検索キーワードを入力してください");
+            return;
+        }
+
+        setIsSearching(true);
+        setSearchError("");
+        setSearchResults([]);
+
+        try {
+            const response = await fetch(`/api/music/search?q=${encodeURIComponent(keyword)}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to search videos");
+            }
+
+            if (data.status === "success" && data.results) {
+                setSearchResults(data.results);
+            } else {
+                setSearchError(data.message || "検索に失敗しました");
+            }
+        } catch (error) {
+            console.error("Error searching videos:", error);
+            setSearchError("検索中にエラーが発生しました");
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Handle selection of search result
+    const handleSelectResult = (result: SearchResult) => {
+        setMusicId(result.contentId);
+        setTitle(result.title);
+        setUrl(""); // Clear URL field since we selected from search
+        handleFieldChange("music_id", result.contentId);
+        handleFieldChange("title", result.title);
+        setInfoError(""); // Clear any previous errors
+    };
+
     const handleRegister = () => {
         if (validateForm()) {
             onRegister({ music_id: musicId.trim(), title: title.trim() });
@@ -186,16 +250,75 @@ export default function SearchDialog({
             <DialogContent>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
-                        ニコニコ動画で動画を検索し、URLまたはMusicIDを入力して登録できます
+                        ニコニコ動画で動画を検索し、結果から選択するかURLまたはMusicIDを直接入力して登録できます
                     </Typography>
-                    <iframe
-                        ref={iframeRef}
-                        src="https://www.nicovideo.jp/"
-                        width="100%"
-                        height="400"
-                        style={{ border: "1px solid #ccc", borderRadius: "4px" }}
-                        title="ニコニコ動画"
-                    />
+
+                    {/* Search section */}
+                    <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                        <TextField
+                            label="検索キーワード"
+                            value={searchKeyword}
+                            onChange={e => setSearchKeyword(e.target.value)}
+                            fullWidth
+                            size="small"
+                            placeholder="例: ボーカロイド、楽曲名など"
+                            onKeyPress={e => e.key === 'Enter' && handleSearch()}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleSearch}
+                            disabled={isSearching || !searchKeyword.trim()}
+                            startIcon={isSearching ? <CircularProgress size={16} /> : null}
+                            sx={{ minWidth: 100 }}
+                        >
+                            {isSearching ? "検索中..." : "検索"}
+                        </Button>
+                    </Box>
+
+                    {/* Search error */}
+                    {searchError && (
+                        <Box sx={{ color: 'error.main', fontSize: '0.875rem', mb: 2 }}>
+                            {searchError}
+                        </Box>
+                    )}
+                    
+                    {/* Search results */}
+                    {searchResults.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                検索結果 (再生回数順)
+                            </Typography>
+                            <List sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid #ddd', borderRadius: 1 }}>
+                                {searchResults.map((result) => (
+                                    <ListItem key={result.contentId} disablePadding>
+                                        <ListItemButton onClick={() => handleSelectResult(result)}>
+                                            <ListItemAvatar>
+                                                <Avatar 
+                                                    src={result.thumbnailUrl} 
+                                                    variant="rounded"
+                                                    sx={{ width: 60, height: 45 }}
+                                                />
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={result.title}
+                                                secondary={
+                                                    <Box>
+                                                        <Typography variant="caption" display="block">
+                                                            ID: {result.contentId}
+                                                        </Typography>
+                                                        <Typography variant="caption" display="block">
+                                                            再生回数: {result.viewCounter.toLocaleString()}回
+                                                        </Typography>
+                                                    </Box>
+                                                }
+                                                sx={{ ml: 1 }}
+                                            />
+                                        </ListItemButton>
+                                    </ListItem>
+                                ))}
+                            </List>
+                        </Box>
+                    )}
                 </Box>
 
                 <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
@@ -226,7 +349,7 @@ export default function SearchDialog({
                         fullWidth
                         size="small"
                         error={!!errors.music_id}
-                        helperText={errors.music_id || "URLから自動的に抽出されます"}
+                        helperText={errors.music_id || "検索結果から選択またはURLから自動的に抽出されます"}
                     />
                 </Box>
 
@@ -242,7 +365,7 @@ export default function SearchDialog({
                         fullWidth
                         size="small"
                         error={!!errors.title}
-                        helperText={errors.title || "Infoボタンで自動取得、または手動で編集可能です"}
+                        helperText={errors.title || "検索結果から選択、Infoボタンで自動取得、または手動で編集可能です"}
                     />
                     <Button
                         variant="outlined"
