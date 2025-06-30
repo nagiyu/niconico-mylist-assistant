@@ -78,14 +78,14 @@ export default function SearchDialog({
     // Extract Music ID from URL
     const extractMusicIdFromUrl = (inputUrl: string): string | null => {
         if (!inputUrl) return null;
-        
+
         // Support multiple URL formats
         const patterns = [
             /(?:nicovideo\.jp\/watch\/)([a-z]{2}\d+)/,  // https://www.nicovideo.jp/watch/sm12345678
             /(?:nico\.ms\/)([a-z]{2}\d+)/,              // https://nico.ms/sm12345678
             /^([a-z]{2}\d+)$/                           // Direct ID like sm12345678
         ];
-        
+
         for (const pattern of patterns) {
             const match = inputUrl.match(pattern);
             if (match) {
@@ -98,7 +98,7 @@ export default function SearchDialog({
     // Handle URL input change with automatic MusicID extraction
     const handleUrlChange = (inputUrl: string) => {
         setUrl(inputUrl);
-        
+
         if (inputUrl.trim()) {
             const extractedId = extractMusicIdFromUrl(inputUrl.trim());
             if (extractedId) {
@@ -123,7 +123,7 @@ export default function SearchDialog({
 
         try {
             const extractedId = extractMusicIdFromUrl(trimmedUrl);
-            
+
             if (extractedId) {
                 setMusicId(extractedId);
                 handleFieldChange("music_id", extractedId);
@@ -197,7 +197,7 @@ export default function SearchDialog({
                         title="ニコニコ動画"
                     />
                 </Box>
-                
+
                 <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                     <TextField
                         label="URL または MusicID"
@@ -263,8 +263,8 @@ export default function SearchDialog({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>キャンセル</Button>
-                <Button 
-                    variant="contained" 
+                <Button
+                    variant="contained"
                     onClick={handleRegister}
                     disabled={!!errors.music_id || !!errors.title || !musicId.trim() || !title.trim()}
                 >
