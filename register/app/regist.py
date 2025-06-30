@@ -21,7 +21,7 @@ VIDEO_MENU_PARENT_XPATH = '//*[@id="root"]/div[1]/main/div[2]/section/div[1]/div
 VIDEO_MENU_BUTTON_XPATH = './/button[@aria-label="メニュー"]'
 VIDEO_ADD_TO_MYLIST_XPATH = '//button[text()="マイリストに追加"]'
 VIDEO_MYLIST_SELECT_XPATH = '//*[@id="root"]/div[1]/main/div[2]/section/div[3]/div[2]/section/div/ul/li[2]/button'
-MAX_THREADS = 5
+MAX_THREADS = 3
 
 def login(driver, email, password):
     driver.get(NICO_URL)
@@ -82,7 +82,7 @@ def distribute_id_list(id_list, n):
 
 def process_regist(email, password, id_list):
     driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1920, 1080)
+    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
@@ -91,7 +91,7 @@ def process_regist(email, password, id_list):
 
 def regist(email, password, id_list):
     driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1920, 1080)
+    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     remove_all_mylist(driver)
     create_mylist(driver)
@@ -101,9 +101,15 @@ def regist(email, password, id_list):
     id_chunks = distribute_id_list(id_list, threads)
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        failed_id_lists = []
+        # Submit all tasks first, then collect results
+        futures = []
         for chunk in id_chunks:
             future = executor.submit(process_regist, email, password, chunk)
+            futures.append(future)
+        
+        # Collect results from all futures
+        failed_id_lists = []
+        for future in futures:
             failed_id_lists.append(future.result())
 
     # 1つのリストにまとめる

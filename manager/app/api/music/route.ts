@@ -4,39 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { IMusic } from "@/app/interface/IMusic";
 import { IMusicCommon, IUserMusicSetting } from "@/app/interface/IDynamoMusic";
-import { DynamoDBClient, PutItemCommand, GetItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/config/authOptions";
-
-function getDynamoClient() {
-  if (!!process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    // Lambda環境など、環境変数がない場合は credentials を指定しない
-    return new DynamoDBClient({
-      region: process.env.AWS_REGION
-    });
-  }
-
-  return new DynamoDBClient({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
-}
-
-// セッションからGoogleアクセストークンを取得し、ユーザーIDを取得
-async function getGoogleUserIdFromSession(): Promise<string> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.tokens?.find(t => t.provider === "google")?.accessToken;
-  if (!accessToken) return "";
-  const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) return "";
-  const data = await res.json();
-  return data.sub || "";
-}
+import { PutItemCommand, GetItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
+import { getGoogleUserIdFromSession } from "@shared/auth";
+import { getDynamoClient } from "@shared/aws";
 
 export async function GET(req: NextRequest) {
   // セッションからUserID取得
@@ -114,11 +84,30 @@ export async function POST(req: NextRequest) {
   const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
   const now = new Date().toISOString();
 
+  const client = getDynamoClient();
+  
+  // 音楽共通情報が既に存在するかチェック
+  const musicCheckCommand = new ScanCommand({
+    TableName,
+    FilterExpression: "DataType = :datatype AND MusicID = :musicid",
+    ExpressionAttributeValues: {
+      ":datatype": { S: "music" },
+      ":musicid": { S: body.music_id },
+    },
+  });
+
+  const musicResult = await client.send(musicCheckCommand);
+  const musicExists = musicResult.Items && musicResult.Items.length > 0;
+
+  if (musicExists) {
+    return NextResponse.json({ error: "この楽曲ID（" + body.music_id + "）は既に追加されています。" }, { status: 400 });
+  }
+
   // サーバー側でUUID生成
   const music_common_id = randomUUID();
   const user_music_setting_id = randomUUID();
 
-  // 音楽共通情報（DataType: "music"）
+  // 音楽共通情報を作成
   const musicItem = {
     ID: { S: music_common_id },
     DataType: { S: "music" },
@@ -128,6 +117,7 @@ export async function POST(req: NextRequest) {
     MusicID: { S: body.music_id },
     Title: { S: body.title },
   };
+  await client.send(new PutItemCommand({ TableName, Item: musicItem }));
 
   // ユーザー個人設定（DataType: "user"）
   const userItem = {
@@ -143,9 +133,6 @@ export async function POST(req: NextRequest) {
     memo: { S: body.memo ?? "" },
   };
 
-  // PutItemCommandで2件保存（ID, DataTypeでユニーク）
-  const client = getDynamoClient();
-  await client.send(new PutItemCommand({ TableName, Item: musicItem }));
   await client.send(new PutItemCommand({ TableName, Item: userItem }));
 
   // 生成したUUIDも返却

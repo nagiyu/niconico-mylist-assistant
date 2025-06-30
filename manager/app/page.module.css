@@ -13,7 +13,7 @@
   min-height: 100svh;
   padding: 80px;
   gap: 64px;
-  font-family: var(--font-geist-sans);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,7 +35,7 @@
 }
 
 .main ol {
-  font-family: var(--font-geist-mono);
+  font-family: var(--font-geist-mono), monospace;
   padding-left: 0;
   margin: 0;
   font-size: 14px;
@@ -128,7 +128,7 @@ a.secondary {
 
 @media (max-width: 600px) {
   .page {
-    padding: 32px;
+    padding: 16px;
     padding-bottom: 80px;
   }
 
@@ -164,5 +164,35 @@ a.secondary {
 @media (prefers-color-scheme: dark) {
   .logo {
     filter: invert();
+  }
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.buttonContainer {
+  max-width: 600px;
+  margin: 24px auto 8px auto;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+  .tableWrapper {
+    width: calc(100vw - 32px);
+    margin: 0 auto;
+    padding: 0;
+    /* Ensure proper scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .buttonContainer {
+    margin: 24px 16px 8px 16px;
+    max-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }

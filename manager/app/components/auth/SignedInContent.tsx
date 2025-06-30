@@ -13,16 +13,36 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useState } from "react";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
 import AutoDialog from "@/app/components/dialog/AutoDialog";
+import BulkImportDialog from "@/app/components/dialog/BulkImportDialog";
+import SettingsDialog from "@/app/components/dialog/SettingsDialog";
 
 import { Session } from "next-auth";
 import { IMusic } from "@/app/interface/IMusic";
 import { DeleteTarget } from "@/app/types/DeleteTarget";
 import { useEffect } from "react";
 import { IRegisterRequest } from "@/app/interface/IRegisterRequest";
+import { useNotificationManager } from "@/hooks/notification-manager";
+
+interface BulkImportResponse {
+    success: number;
+    failure: number;
+    skip: number;
+    details: {
+        success: string[];
+        failure: string[];
+        skip: string[];
+    };
+    successfulItems?: {
+        music_id: string;
+        music_common_id: string;
+        title: string;
+    }[];
+}
 
 export default function SignedInContent({ session }: { session: Session }) {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -32,8 +52,14 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
     const [autoDialogOpen, setAutoDialogOpen] = useState(false);
+    const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
 
     const [rows, setRows] = useState<IMusic[]>([]);
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    // Notification manager hook
+    const { subscription } = useNotificationManager();
 
     // APIからデータ取得する関数
     const fetchMusic = async () => {
@@ -45,6 +71,36 @@ export default function SignedInContent({ session }: { session: Session }) {
         }
         const data = await res.json();
         setRows(data);
+    };
+
+    // 同期ボタン用の関数
+    const handleSync = async () => {
+        setIsSyncing(true);
+        try {
+            await fetchMusic();
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // ローカルキャッシュ更新用のヘルパー関数
+    const updateLocalCache = (updatedItem: IMusic, operation: 'create' | 'update' | 'delete') => {
+        setRows(prevRows => {
+            switch (operation) {
+                case 'create':
+                    return [...prevRows, updatedItem];
+                case 'update':
+                    return prevRows.map(row =>
+                        row.music_common_id === updatedItem.music_common_id ? updatedItem : row
+                    );
+                case 'delete':
+                    return prevRows.filter(row =>
+                        row.music_common_id !== updatedItem.music_common_id
+                    );
+                default:
+                    return prevRows;
+            }
+        });
     };
 
     // 初回マウント時に API から取得
@@ -98,9 +154,32 @@ export default function SignedInContent({ session }: { session: Session }) {
             signOut();
             return;
         }
+        if (!res.ok) {
+            // エラーレスポンスを処理
+            const errorData = await res.json();
+            alert(errorData.error || "エラーが発生しました");
+            return;
+        }
+
+        // レスポンスデータを取得
+        const responseData = await res.json();
+
+        // ローカルキャッシュを更新（DynamoDBを再取得しない）
+        if (method === "POST") {
+            // 新規作成の場合、サーバーから返された ID を使用
+            const newItem: IMusic = {
+                ...editData,
+                music_common_id: responseData.music_common_id,
+                user_music_setting_id: responseData.user_music_setting_id,
+            };
+            updateLocalCache(newItem, 'create');
+        } else {
+            // 更新の場合、既存のeditDataを使用
+            updateLocalCache(editData, 'update');
+        }
+
         setDialogOpen(false);
         setEditData(null);
-        await fetchMusic();
     };
 
     const handleDeleteDialogClose = () => {
@@ -126,10 +205,57 @@ export default function SignedInContent({ session }: { session: Session }) {
                 signOut();
                 return;
             }
+
+            // 削除成功時、ローカルキャッシュから削除（DynamoDBを再取得しない）
+            if (res.ok && row) {
+                updateLocalCache(row, 'delete');
+            }
         }
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
-        await fetchMusic();
+    };
+
+    const handleBulkImport = async (items: { music_id: string; title: string }[]) => {
+        const res = await fetch("/api/music/bulk-import", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ items }),
+        });
+
+        if (res.status === 401) {
+            signOut();
+            return;
+        }
+
+        const result: BulkImportResponse = await res.json();
+
+        // Show results to user
+        const message = `インポート完了:
+成功: ${result.success}件
+スキップ: ${result.skip}件
+失敗: ${result.failure}件`;
+
+        alert(message);
+
+        // インポートが成功した場合、ローカルキャッシュに成功したアイテムを追加
+        // 今度はサーバーから返された実際のIDを使用
+        if (result.success > 0 && result.successfulItems) {
+            result.successfulItems.forEach(item => {
+                // 新しいアイテムをローカルキャッシュに追加
+                const newItem: IMusic = {
+                    music_common_id: item.music_common_id,
+                    user_music_setting_id: "", // bulk-importでは個人設定は未作成
+                    music_id: item.music_id,
+                    title: item.title,
+                    favorite: false,
+                    skip: false,
+                    memo: "",
+                };
+                updateLocalCache(newItem, 'create');
+            });
+        }
     };
 
     return (
@@ -147,54 +273,64 @@ export default function SignedInContent({ session }: { session: Session }) {
 
             <main className={styles.main}>
                 <>
-                    <div style={{ maxWidth: 600, margin: "24px auto 8px auto", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <div className={styles.buttonContainer}>
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
+                        <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
+                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
+                            {isSyncing ? "同期中..." : "Sync"}
+                        </Button>
+                        <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
                     </div>
-                    <TableContainer component={Paper} sx={{ maxWidth: 600, margin: "24px auto" }}>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>タイトル</TableCell>
-                                    <TableCell align="center">お気に入り</TableCell>
-                                    <TableCell align="center">スキップ</TableCell>
-                                    <TableCell align="center">オプション</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row) =>
-                                    <TableRow key={row.music_id}>
-                                        <TableCell>{row.music_id}</TableCell>
-                                        <TableCell>{row.title}</TableCell>
-                                        <TableCell align="center">{row.favorite ? "○" : "×"}</TableCell>
-                                        <TableCell align="center">{row.skip ? "○" : "×"}</TableCell>
-                                        <TableCell align="center">
-                                            <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => handleEdit(row)}>Edit</Button>
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                color="error"
-                                                onClick={() => {
-                                                    if (row && row.music_common_id && row.title) {
-                                                        setDeleteTarget({
-                                                            music_common_id: row.music_common_id,
-                                                            user_music_setting_id: row.user_music_setting_id,
-                                                            music_id: row.music_id,
-                                                            title: row.title
-                                                        });
-                                                        setDeleteDialogOpen(true);
-                                                    }
-                                                }}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </TableCell>
+                    <div className={styles.tableWrapper}>
+                        <TableContainer component={Paper} sx={{
+                            maxWidth: { xs: 'none', sm: 600 },
+                            margin: { xs: '24px 0', sm: '24px auto' }
+                        }}>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>ID</TableCell>
+                                        <TableCell>タイトル</TableCell>
+                                        <TableCell align="center">お気に入り</TableCell>
+                                        <TableCell align="center">スキップ</TableCell>
+                                        <TableCell align="center">オプション</TableCell>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                </TableHead>
+                                <TableBody>
+                                    {rows.map((row) =>
+                                        <TableRow key={row.music_id}>
+                                            <TableCell>{row.music_id}</TableCell>
+                                            <TableCell>{row.title}</TableCell>
+                                            <TableCell align="center">{row.favorite ? "○" : "×"}</TableCell>
+                                            <TableCell align="center">{row.skip ? "○" : "×"}</TableCell>
+                                            <TableCell align="center">
+                                                <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => handleEdit(row)}>Edit</Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="error"
+                                                    onClick={() => {
+                                                        if (row && row.music_common_id && row.title) {
+                                                            setDeleteTarget({
+                                                                music_common_id: row.music_common_id,
+                                                                user_music_setting_id: row.user_music_setting_id,
+                                                                music_id: row.music_id,
+                                                                title: row.title
+                                                            });
+                                                            setDeleteDialogOpen(true);
+                                                        }
+                                                    }}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
                 </>
             </main>
 
@@ -213,9 +349,16 @@ export default function SignedInContent({ session }: { session: Session }) {
                 onDelete={handleDeleteDialogDelete}
             />
 
+            <BulkImportDialog
+                open={bulkImportDialogOpen}
+                onClose={() => setBulkImportDialogOpen(false)}
+                onImport={handleBulkImport}
+            />
+
             <AutoDialog
                 open={autoDialogOpen}
                 onClose={() => setAutoDialogOpen(false)}
+                rowsCount={rows.filter(r => !r.skip).length}
                 onAuto={async ({ email, password, mylistTitle, count }) => {
                     // rowsからskip=falseのmusic_idをランダム抽出
                     const filtered = rows.filter(r => !r.skip);
@@ -226,7 +369,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                     const id_list = shuffled.slice(0, count).map(r => r.music_id);
 
                     try {
-                        const reqBody: IRegisterRequest = { email, password, id_list };
+                        const reqBody: IRegisterRequest = { email, password, id_list, subscription };
                         const res = await fetch("/api/register", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -234,7 +377,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         });
                         const data = await res.json();
                         if (res.ok) {
-                            alert("自動処理成功: " + JSON.stringify(data));
+                            alert("自動登録処理を開始しました。完了時に通知をお送りします。");
                         } else {
                             alert("自動処理失敗: " + JSON.stringify(data));
                         }
@@ -243,6 +386,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                     }
                     setAutoDialogOpen(false);
                 }}
+            />
+            <SettingsDialog
+                open={settingsDialogOpen}
+                onClose={() => setSettingsDialogOpen(false)}
             />
         </>
     );

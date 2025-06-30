@@ -18,5 +18,6 @@ Content-Type: application/json
         "sm44862177",
         "sm40352352",
         "sm18358647"
-    ]
+    ],
+    "subscription": "{\"endpoint\":\"https://fcm.googleapis.com/fcm/send/test\",\"keys\":{\"p256dh\":\"test_key\",\"auth\":\"test_auth\"}}"
 }

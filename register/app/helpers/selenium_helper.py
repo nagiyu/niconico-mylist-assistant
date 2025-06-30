@@ -14,8 +14,34 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument('--no-zygote')
+    
+    # Performance optimizations - disable unnecessary features (keeping only stable options)
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-features=TranslateUI")
+    options.add_argument("--disable-audio-output")
+    options.add_argument("--disable-default-apps")
+    
+    # Set preferences to disable media and other unnecessary content
+    prefs = {
+        "profile.managed_default_content_settings.images": 2,
+        "profile.default_content_setting_values.notifications": 2,
+        "profile.default_content_settings.popups": 0,
+        "profile.default_content_setting_values.media_stream": 2,
+        "profile.default_content_setting_values.geolocation": 2,
+        "profile.default_content_setting_values.plugins": 2,
+        "profile.managed_default_content_settings.media_stream": 2
+    }
+    options.add_experimental_option("prefs", prefs)
 
-    return webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options)
+    
+    # Set conservative timeouts to prevent connection issues
+    driver.set_page_load_timeout(120)  # 2 minutes for page loading
+    driver.implicitly_wait(10)  # 10 seconds for element finding
+    
+    return driver
 
 
 def wait_and_click(driver: WebDriver, xpath: str, timeout: int = 10) -> None:
