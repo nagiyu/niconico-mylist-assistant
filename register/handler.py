@@ -47,6 +47,14 @@ def lambda_handler(event, context):
     body = event.get("body")
     if body:
         data = json.loads(body)
+        
+        # Check if this is a health check request
+        if data.get("health_check"):
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "Lambda is ready", "timestamp": context.get_remaining_time_in_millis() if context else 0})
+            }
+        
         email = data.get("email")
         encrypted_password = data.get("password")
         id_list = data.get("id_list")
