@@ -1,0 +1,233 @@
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { useState, useEffect, useRef } from "react";
+
+interface SearchDialogProps {
+    open: boolean;
+    onClose: () => void;
+    onRegister: (data: { music_id: string; title: string }) => void;
+}
+
+interface ValidationErrors {
+    music_id: string;
+    title: string;
+}
+
+export default function SearchDialog({
+    open,
+    onClose,
+    onRegister,
+}: SearchDialogProps) {
+    const [musicId, setMusicId] = useState("");
+    const [title, setTitle] = useState("");
+    const [errors, setErrors] = useState<ValidationErrors>({
+        music_id: "",
+        title: "",
+    });
+    const [isLoadingInfo, setIsLoadingInfo] = useState(false);
+    const [infoError, setInfoError] = useState<string>("");
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+
+    // Validation function
+    const validateField = (field: string, value: string): string => {
+        if (field === "music_id" || field === "title") {
+            if (!value || value.trim() === "") {
+                return `${field === "music_id" ? "ID" : "タイトル"}は必須です`;
+            }
+        }
+        return "";
+    };
+
+    // Validate all fields
+    const validateForm = (): boolean => {
+        const newErrors: ValidationErrors = {
+            music_id: validateField("music_id", musicId),
+            title: validateField("title", title),
+        };
+        setErrors(newErrors);
+        return !newErrors.music_id && !newErrors.title;
+    };
+
+    // Real-time validation on field change
+    const handleFieldChange = (field: keyof ValidationErrors, value: string) => {
+        const error = validateField(field, value);
+        setErrors(prev => ({ ...prev, [field]: error }));
+    };
+
+    // Reset form when dialog opens/closes
+    useEffect(() => {
+        if (open) {
+            setMusicId("");
+            setTitle("");
+            setErrors({ music_id: "", title: "" });
+            setInfoError("");
+        }
+    }, [open]);
+
+    // Extract Music ID from iframe URL
+    const handleExtractMusicId = () => {
+        try {
+            // Note: Due to CORS restrictions, we cannot directly access iframe content
+            // This is a simplified implementation asking user to manually input the URL
+            const userUrl = prompt("現在のニコニコ動画のURLを入力してください:\n例: https://www.nicovideo.jp/watch/sm12345678\n例: https://nico.ms/sm12345678");
+            
+            if (userUrl) {
+                // Support multiple URL formats
+                const patterns = [
+                    /(?:nicovideo\.jp\/watch\/)([a-z]{2}\d+)/,  // https://www.nicovideo.jp/watch/sm12345678
+                    /(?:nico\.ms\/)([a-z]{2}\d+)/,              // https://nico.ms/sm12345678
+                    /^([a-z]{2}\d+)$/                           // Direct ID like sm12345678
+                ];
+                
+                let extractedId = null;
+                for (const pattern of patterns) {
+                    const match = userUrl.match(pattern);
+                    if (match) {
+                        extractedId = match[1];
+                        break;
+                    }
+                }
+                
+                if (extractedId) {
+                    setMusicId(extractedId);
+                    handleFieldChange("music_id", extractedId);
+                    setInfoError(""); // Clear any previous errors
+                } else {
+                    alert("有効なニコニコ動画のURLまたはIDを入力してください\n例: sm12345678, https://www.nicovideo.jp/watch/sm12345678");
+                }
+            }
+        } catch (error) {
+            console.error("Error extracting music ID:", error);
+            alert("MusicIDの取得に失敗しました");
+        }
+    };
+
+    // Fetch video info from Niconico API
+    const handleGetInfo = async () => {
+        const trimmedMusicId = musicId.trim();
+        if (!trimmedMusicId) {
+            setInfoError("IDを入力してください");
+            return;
+        }
+
+        setIsLoadingInfo(true);
+        setInfoError("");
+
+        try {
+            const response = await fetch(`/api/music/info?video_id=${encodeURIComponent(trimmedMusicId)}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to fetch video info");
+            }
+
+            if (data.status === "success" && data.title) {
+                setTitle(data.title);
+                // Clear title validation error if title was successfully fetched
+                setErrors(prev => ({ ...prev, title: "" }));
+            } else {
+                setInfoError(data.message || "情報の取得に失敗しました");
+            }
+        } catch (error) {
+            console.error("Error fetching video info:", error);
+            setInfoError("情報の取得中にエラーが発生しました");
+        } finally {
+            setIsLoadingInfo(false);
+        }
+    };
+
+    const handleRegister = () => {
+        if (validateForm()) {
+            onRegister({ music_id: musicId.trim(), title: title.trim() });
+            onClose();
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+            <DialogTitle>検索</DialogTitle>
+            <DialogContent>
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                        ニコニコ動画で動画を検索し、URLからMusicIDを取得できます
+                    </Typography>
+                    <iframe
+                        ref={iframeRef}
+                        src="https://www.nicovideo.jp/"
+                        width="100%"
+                        height="400"
+                        style={{ border: "1px solid #ccc", borderRadius: "4px" }}
+                        title="ニコニコ動画"
+                    />
+                </Box>
+                
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                    <TextField
+                        label="Music ID"
+                        value={musicId}
+                        disabled
+                        fullWidth
+                        size="small"
+                        error={!!errors.music_id}
+                        helperText={errors.music_id || "URLから自動的に抽出されます"}
+                    />
+                    <Button
+                        variant="outlined"
+                        onClick={handleExtractMusicId}
+                        sx={{ minWidth: 100 }}
+                    >
+                        取得
+                    </Button>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                    <TextField
+                        label="タイトル"
+                        value={title}
+                        onChange={e => {
+                            const value = e.target.value;
+                            setTitle(value);
+                            handleFieldChange("title", value);
+                        }}
+                        fullWidth
+                        size="small"
+                        error={!!errors.title}
+                        helperText={errors.title || "Infoボタンで自動取得、または手動で編集可能です"}
+                    />
+                    <Button
+                        variant="outlined"
+                        onClick={handleGetInfo}
+                        disabled={isLoadingInfo || !musicId.trim()}
+                        startIcon={isLoadingInfo ? <CircularProgress size={16} /> : null}
+                        sx={{ minWidth: 100 }}
+                    >
+                        {isLoadingInfo ? "取得中..." : "Info"}
+                    </Button>
+                </Box>
+
+                {infoError && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
+                        {infoError}
+                    </Box>
+                )}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose}>キャンセル</Button>
+                <Button 
+                    variant="contained" 
+                    onClick={handleRegister}
+                    disabled={!!errors.music_id || !!errors.title || !musicId.trim() || !title.trim()}
+                >
+                    登録
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
