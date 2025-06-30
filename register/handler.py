@@ -5,7 +5,7 @@ import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from app import regist
 
-def send_push_notification(subscription_json, failed_id_list):
+def send_push_notification(subscription_json, failed_id_list, email=None):
     """プッシュ通知を送信する"""
     try:
         subscription = json.loads(subscription_json)
@@ -22,13 +22,18 @@ def send_push_notification(subscription_json, failed_id_list):
         if not api_endpoint:
             print("NOTIFICATION_API_ENDPOINT not configured, skipping push notification")
             return
+        
+        # Include email in the request payload if provided
+        payload = {
+            "message": message,
+            "subscription": subscription
+        }
+        if email:
+            payload["email"] = email
             
         response = requests.post(
             api_endpoint,
-            json={
-                "message": message,
-                "subscription": subscription
-            },
+            json=payload,
             headers={"Content-Type": "application/json"},
             timeout=10
         )
@@ -85,7 +90,7 @@ def lambda_handler(event, context):
     # プッシュ通知の送信
     if subscription_json:
         try:
-            send_push_notification(subscription_json, failed_id_list)
+            send_push_notification(subscription_json, failed_id_list, email)
         except Exception as e:
             print(f"Failed to send push notification: {e}")
             # 通知送信失敗は処理全体を失敗させない

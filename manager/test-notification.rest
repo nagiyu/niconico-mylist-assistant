@@ -1,0 +1,58 @@
+@host = http://localhost:3000
+@notification_endpoint = {{host}}/api/send-notification
+
+### Test notification with custom email
+POST {{notification_endpoint}}
+Content-Type: application/json
+
+{
+    "message": "Test notification with custom email",
+    "subscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/test",
+        "keys": {
+            "p256dh": "test_key",
+            "auth": "test_auth"
+        }
+    },
+    "email": "user@example.com"
+}
+
+### Test notification without email (backward compatibility)
+POST {{notification_endpoint}}
+Content-Type: application/json
+
+{
+    "message": "Test notification without email",
+    "subscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/test",
+        "keys": {
+            "p256dh": "test_key",
+            "auth": "test_auth"
+        }
+    }
+}
+
+### Test notification with invalid email
+POST {{notification_endpoint}}
+Content-Type: application/json
+
+{
+    "message": "Test notification with invalid email",
+    "subscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/test",
+        "keys": {
+            "p256dh": "test_key",
+            "auth": "test_auth"
+        }
+    },
+    "email": "invalid-email-format"
+}
+
+### Test notification without subscription
+POST {{notification_endpoint}}
+Content-Type: application/json
+
+{
+    "message": "Test notification without subscription",
+    "email": "user@example.com"
+}

@@ -3,7 +3,7 @@ import webpush from "web-push";
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, subscription } = await req.json();
+    const { message, subscription, email } = await req.json();
 
     if (!subscription) {
       return NextResponse.json({ error: "No subscription provided" }, { status: 400 });
@@ -12,7 +12,18 @@ export async function POST(req: NextRequest) {
     // VAPID keys should be set in environment variables
     const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-    const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+    
+    // Use provided email or fallback to environment variable or default
+    let VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+    if (email) {
+      // Simple email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailRegex.test(email)) {
+        VAPID_SUBJECT = `mailto:${email}`;
+      } else {
+        return NextResponse.json({ error: "Invalid email format provided" }, { status: 400 });
+      }
+    }
 
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
       return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
