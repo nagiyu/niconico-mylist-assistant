@@ -27,6 +27,7 @@ export default function SearchDialog({
 }: SearchDialogProps) {
     const [musicId, setMusicId] = useState("");
     const [title, setTitle] = useState("");
+    const [url, setUrl] = useState("");
     const [errors, setErrors] = useState<ValidationErrors>({
         music_id: "",
         title: "",
@@ -66,42 +67,67 @@ export default function SearchDialog({
         if (open) {
             setMusicId("");
             setTitle("");
+            setUrl("");
             setErrors({ music_id: "", title: "" });
             setInfoError("");
         }
     }, [open]);
 
-    // Extract Music ID from iframe URL
+    // Extract Music ID from URL
+    const extractMusicIdFromUrl = (inputUrl: string): string | null => {
+        if (!inputUrl) return null;
+        
+        // Support multiple URL formats
+        const patterns = [
+            /(?:nicovideo\.jp\/watch\/)([a-z]{2}\d+)/,  // https://www.nicovideo.jp/watch/sm12345678
+            /(?:nico\.ms\/)([a-z]{2}\d+)/,              // https://nico.ms/sm12345678
+            /^([a-z]{2}\d+)$/                           // Direct ID like sm12345678
+        ];
+        
+        for (const pattern of patterns) {
+            const match = inputUrl.match(pattern);
+            if (match) {
+                return match[1];
+            }
+        }
+        return null;
+    };
+
+    // Handle URL input change with automatic MusicID extraction
+    const handleUrlChange = (inputUrl: string) => {
+        setUrl(inputUrl);
+        
+        if (inputUrl.trim()) {
+            const extractedId = extractMusicIdFromUrl(inputUrl.trim());
+            if (extractedId) {
+                setMusicId(extractedId);
+                handleFieldChange("music_id", extractedId);
+                setInfoError(""); // Clear any previous errors
+            }
+        } else {
+            // Clear MusicID when URL is cleared
+            setMusicId("");
+            handleFieldChange("music_id", "");
+        }
+    };
+
+    // Extract Music ID from URL field
     const handleExtractMusicId = () => {
+        const trimmedUrl = url.trim();
+        if (!trimmedUrl) {
+            alert("URLまたはMusicIDを入力してください");
+            return;
+        }
+
         try {
-            // Note: Due to CORS restrictions, we cannot directly access iframe content
-            // This is a simplified implementation asking user to manually input the URL
-            const userUrl = prompt("現在のニコニコ動画のURLを入力してください:\n例: https://www.nicovideo.jp/watch/sm12345678\n例: https://nico.ms/sm12345678");
+            const extractedId = extractMusicIdFromUrl(trimmedUrl);
             
-            if (userUrl) {
-                // Support multiple URL formats
-                const patterns = [
-                    /(?:nicovideo\.jp\/watch\/)([a-z]{2}\d+)/,  // https://www.nicovideo.jp/watch/sm12345678
-                    /(?:nico\.ms\/)([a-z]{2}\d+)/,              // https://nico.ms/sm12345678
-                    /^([a-z]{2}\d+)$/                           // Direct ID like sm12345678
-                ];
-                
-                let extractedId = null;
-                for (const pattern of patterns) {
-                    const match = userUrl.match(pattern);
-                    if (match) {
-                        extractedId = match[1];
-                        break;
-                    }
-                }
-                
-                if (extractedId) {
-                    setMusicId(extractedId);
-                    handleFieldChange("music_id", extractedId);
-                    setInfoError(""); // Clear any previous errors
-                } else {
-                    alert("有効なニコニコ動画のURLまたはIDを入力してください\n例: sm12345678, https://www.nicovideo.jp/watch/sm12345678");
-                }
+            if (extractedId) {
+                setMusicId(extractedId);
+                handleFieldChange("music_id", extractedId);
+                setInfoError(""); // Clear any previous errors
+            } else {
+                alert("有効なニコニコ動画のURLまたはIDを入力してください\n例: sm12345678, https://www.nicovideo.jp/watch/sm12345678");
             }
         } catch (error) {
             console.error("Error extracting music ID:", error);
@@ -156,7 +182,7 @@ export default function SearchDialog({
             <DialogContent>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
-                        ニコニコ動画で動画を検索し、URLからMusicIDを取得できます
+                        ニコニコ動画で動画を検索し、URLまたはMusicIDを入力して登録できます
                     </Typography>
                     <iframe
                         ref={iframeRef}
@@ -170,6 +196,26 @@ export default function SearchDialog({
                 
                 <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                     <TextField
+                        label="URL または MusicID"
+                        value={url}
+                        onChange={e => handleUrlChange(e.target.value)}
+                        fullWidth
+                        size="small"
+                        placeholder="例: https://www.nicovideo.jp/watch/sm12345678 または sm12345678"
+                        helperText="URLまたはMusicIDを入力すると自動的に抽出されます"
+                    />
+                    <Button
+                        variant="outlined"
+                        onClick={handleExtractMusicId}
+                        disabled={!url.trim()}
+                        sx={{ minWidth: 100 }}
+                    >
+                        取得
+                    </Button>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                    <TextField
                         label="Music ID"
                         value={musicId}
                         disabled
@@ -178,13 +224,6 @@ export default function SearchDialog({
                         error={!!errors.music_id}
                         helperText={errors.music_id || "URLから自動的に抽出されます"}
                     />
-                    <Button
-                        variant="outlined"
-                        onClick={handleExtractMusicId}
-                        sx={{ minWidth: 100 }}
-                    >
-                        取得
-                    </Button>
                 </Box>
 
                 <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
