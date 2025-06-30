@@ -3,7 +3,7 @@ import webpush from "web-push";
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, subscription, email } = await req.json();
+    const { message, subscription } = await req.json();
 
     if (!subscription) {
       return NextResponse.json({ error: "No subscription provided" }, { status: 400 });
@@ -13,20 +13,9 @@ export async function POST(req: NextRequest) {
     const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
     
-    // Use provided email or fallback to environment variable or default
-    let VAPID_SUBJECT;
-    if (email) {
-      // Simple email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (emailRegex.test(email)) {
-        VAPID_SUBJECT = `mailto:${email}`;
-      } else {
-        return NextResponse.json({ error: "Invalid email format provided" }, { status: 400 });
-      }
-    } else {
-      const envSubject = process.env.VAPID_SUBJECT || "admin@example.com";
-      VAPID_SUBJECT = envSubject.startsWith("mailto:") ? envSubject : `mailto:${envSubject}`;
-    }
+    // Ensure VAPID_SUBJECT is properly formatted with mailto: prefix
+    const envSubject = process.env.VAPID_SUBJECT || "admin@example.com";
+    const VAPID_SUBJECT = envSubject.startsWith("mailto:") ? envSubject : `mailto:${envSubject}`;
 
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
       return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
