@@ -13,7 +13,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import Avatar from "@mui/material/Avatar";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 interface SearchDialogProps {
     open: boolean;
@@ -80,9 +80,6 @@ export default function SearchDialog({
         const error = validateField(field, value);
         setErrors(prev => ({ ...prev, [field]: error }));
     };
-
-    // iframe ref for getting current URL
-    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // Reset form when dialog opens/closes
     useEffect(() => {
@@ -253,57 +250,27 @@ export default function SearchDialog({
                         ニコニコ動画で動画を検索し、結果から選択するかURLまたはMusicIDを直接入力して登録できます
                     </Typography>
 
-                    {/* --- IFRAME --- */}
-                    <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom>
-                            ニコニコ動画を直接開く
-                        </Typography>
-                        <Box sx={{ border: '1px solid #ddd', borderRadius: 1, overflow: 'hidden', mb: 1 }}>
-                            <iframe
-                                ref={iframeRef}
-                                src={url || "https://www.nicovideo.jp/"}
-                                width="100%"
-                                height="300"
-                                style={{ border: 0 }}
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                                title="ニコニコ動画iframe"
-                            />
-                        </Box>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
-                            <Button
-                                variant="outlined"
-                                onClick={() => {
-                                    try {
-                                        const iframe = iframeRef.current;
-                                        if (iframe && iframe.contentWindow) {
-                                            // Try to get the current URL from iframe (may fail due to CORS)
-                                            const currentUrl = iframe.contentWindow.location.href;
-                                            setUrl(currentUrl);
-                                            const extractedId = extractMusicIdFromUrl(currentUrl);
-                                            if (extractedId) {
-                                                setMusicId(extractedId);
-                                                handleFieldChange("music_id", extractedId);
-                                                setInfoError("");
-                                            }
-                                        }
-                                    } catch (e) {
-                                        alert("iframeのURL取得に失敗しました (CORS制限の可能性あり)");
-                                    }
-                                }}
-                                sx={{ minWidth: 100 }}
-                            >
-                                取得
-                            </Button>
-                            <TextField
-                                label="現在のページURL"
-                                value={url}
-                                disabled
-                                size="small"
-                                sx={{ flex: 1 }}
-                            />
-                        </Box>
+                    {/* Search section */}
+                    <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                        <TextField
+                            label="検索キーワード"
+                            value={searchKeyword}
+                            onChange={e => setSearchKeyword(e.target.value)}
+                            fullWidth
+                            size="small"
+                            placeholder="例: ボーカロイド、楽曲名など"
+                            onKeyPress={e => e.key === 'Enter' && handleSearch()}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleSearch}
+                            disabled={isSearching || !searchKeyword.trim()}
+                            startIcon={isSearching ? <CircularProgress size={16} /> : null}
+                            sx={{ minWidth: 100 }}
+                        >
+                            {isSearching ? "検索中..." : "検索"}
+                        </Button>
                     </Box>
-
 
                     {/* Search error */}
                     {searchError && (
