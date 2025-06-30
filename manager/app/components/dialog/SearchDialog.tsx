@@ -8,6 +8,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useState, useEffect, useRef } from "react";
+import styles from "./SearchDialog.module.css";
+
 
 interface SearchDialogProps {
     open: boolean;
@@ -177,7 +179,9 @@ export default function SearchDialog({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
+            PaperProps={{ className: styles.searchDialogPaper }}
+        >
             <DialogTitle>検索</DialogTitle>
             <DialogContent>
                 <Box sx={{ mb: 2 }}>
