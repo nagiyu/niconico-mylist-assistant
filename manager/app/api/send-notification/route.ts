@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
     
     // Use provided email or fallback to environment variable or default
-    let VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+    let VAPID_SUBJECT;
     if (email) {
       // Simple email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
       } else {
         return NextResponse.json({ error: "Invalid email format provided" }, { status: 400 });
       }
+    } else {
+      const envSubject = process.env.VAPID_SUBJECT || "admin@example.com";
+      VAPID_SUBJECT = envSubject.startsWith("mailto:") ? envSubject : `mailto:${envSubject}`;
     }
 
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
