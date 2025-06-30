@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
     // VAPID keys should be set in environment variables
     const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-    const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+    
+    // Ensure VAPID_SUBJECT is properly formatted with mailto: prefix
+    const envSubject = process.env.VAPID_SUBJECT || "admin@example.com";
+    const VAPID_SUBJECT = envSubject.startsWith("mailto:") ? envSubject : `mailto:${envSubject}`;
 
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
       return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
