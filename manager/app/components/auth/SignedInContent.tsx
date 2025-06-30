@@ -61,7 +61,7 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [rows, setRows] = useState<IMusic[]>([]);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    
+
     // Search state
     const [searchTerm, setSearchTerm] = useState("");
     const [searchFavorite, setSearchFavorite] = useState<string>("");
@@ -271,20 +271,20 @@ export default function SignedInContent({ session }: { session: Session }) {
     const filteredRows = rows.filter(row => {
         // MusicID prefix match
         const musicIdMatch = !searchTerm || row.music_id.toLowerCase().startsWith(searchTerm.toLowerCase());
-        
+
         // Title partial match
         const titleMatch = !searchTerm || row.title.toLowerCase().includes(searchTerm.toLowerCase());
-        
+
         // Favorite filter
-        const favoriteMatch = !searchFavorite || 
-            (searchFavorite === "true" && row.favorite) || 
+        const favoriteMatch = !searchFavorite ||
+            (searchFavorite === "true" && row.favorite) ||
             (searchFavorite === "false" && !row.favorite);
-        
+
         // Skip filter
-        const skipMatch = !searchSkip || 
-            (searchSkip === "true" && row.skip) || 
+        const skipMatch = !searchSkip ||
+            (searchSkip === "true" && row.skip) ||
             (searchSkip === "false" && !row.skip);
-        
+
         // Match if MusicID OR Title matches, AND favorite AND skip match
         return (musicIdMatch || titleMatch) && favoriteMatch && skipMatch;
     });
@@ -314,10 +314,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                         </Button>
                         <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
                     </div>
-                    
+
                     {/* Search filters */}
-                    <Box sx={{ 
-                        maxWidth: { xs: 'none', sm: 600 }, 
+                    <Box sx={{
+                        maxWidth: { xs: 'none', sm: 600 },
                         margin: { xs: '16px 0', sm: '16px auto' },
                         display: 'flex',
                         flexDirection: { xs: 'column', sm: 'row' },
@@ -330,7 +330,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="ID または タイトルで検索"
-                            sx={{ flexGrow: 1 }}
+                            sx={{ flexGrow: 1, backgroundColor: "#fff" }}
                         />
                         <TextField
                             size="small"
@@ -339,7 +339,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                             value={searchFavorite}
                             onChange={(e) => setSearchFavorite(e.target.value)}
                             SelectProps={{ native: true }}
-                            sx={{ minWidth: 120 }}
+                            sx={{ minWidth: 120, backgroundColor: "#fff" }}
                         >
                             <option value="">すべて</option>
                             <option value="true">○</option>
@@ -352,14 +352,14 @@ export default function SignedInContent({ session }: { session: Session }) {
                             value={searchSkip}
                             onChange={(e) => setSearchSkip(e.target.value)}
                             SelectProps={{ native: true }}
-                            sx={{ minWidth: 120 }}
+                            sx={{ minWidth: 120, backgroundColor: "#fff" }}
                         >
                             <option value="">すべて</option>
                             <option value="true">○</option>
                             <option value="false">×</option>
                         </TextField>
                     </Box>
-                    
+
                     <div className={styles.tableWrapper}>
                         <TableContainer component={Paper} sx={{
                             maxWidth: { xs: 'none', sm: 600 },
@@ -483,7 +483,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         skip: false,
                         memo: "",
                     };
-                    
+
                     try {
                         const response = await fetch("/api/music", {
                             method: "POST",
@@ -496,7 +496,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                                 memo: newItem.memo,
                             }),
                         });
-                        
+
                         if (response.ok) {
                             const result = await response.json();
                             const addedItem = {
