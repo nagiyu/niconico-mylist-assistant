@@ -20,6 +20,7 @@ import DeleteDialog from "@/app/components/dialog/DeleteDialog";
 import AutoDialog from "@/app/components/dialog/AutoDialog";
 import BulkImportDialog from "@/app/components/dialog/BulkImportDialog";
 import SettingsDialog from "@/app/components/dialog/SettingsDialog";
+import SearchDialog from "@/app/components/dialog/SearchDialog";
 
 import { Session } from "next-auth";
 import { IMusic } from "@/app/interface/IMusic";
@@ -53,6 +54,7 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     const [autoDialogOpen, setAutoDialogOpen] = useState(false);
     const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
+    const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
     const [rows, setRows] = useState<IMusic[]>([]);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -277,6 +279,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
+                        <Button variant="contained" color="success" sx={{ minWidth: 80 }} onClick={() => setSearchDialogOpen(true)}>Search</Button>
                         <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
                             {isSyncing ? "同期中..." : "Sync"}
                         </Button>
@@ -390,6 +393,53 @@ export default function SignedInContent({ session }: { session: Session }) {
             <SettingsDialog
                 open={settingsDialogOpen}
                 onClose={() => setSettingsDialogOpen(false)}
+            />
+            <SearchDialog
+                open={searchDialogOpen}
+                onClose={() => setSearchDialogOpen(false)}
+                onRegister={async (data) => {
+                    // Create new music item similar to handleAdd
+                    const newItem: IMusic = {
+                        music_common_id: "",
+                        user_music_setting_id: "",
+                        music_id: data.music_id,
+                        title: data.title,
+                        favorite: false,
+                        skip: false,
+                        memo: "",
+                    };
+                    
+                    try {
+                        const response = await fetch("/api/music", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                music_id: newItem.music_id,
+                                title: newItem.title,
+                                favorite: newItem.favorite,
+                                skip: newItem.skip,
+                                memo: newItem.memo,
+                            }),
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            const addedItem = {
+                                ...newItem,
+                                music_common_id: result.music_common_id,
+                                user_music_setting_id: result.user_music_setting_id,
+                            };
+                            updateLocalCache(addedItem, 'create');
+                            setSearchDialogOpen(false);
+                        } else {
+                            const errorData = await response.json();
+                            alert("登録に失敗しました: " + JSON.stringify(errorData));
+                        }
+                    } catch (error) {
+                        console.error("Error adding music:", error);
+                        alert("登録中にエラーが発生しました");
+                    }
+                }}
             />
         </>
     );
