@@ -14,6 +14,8 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import { useState } from "react";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
@@ -59,6 +61,11 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [rows, setRows] = useState<IMusic[]>([]);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    
+    // Search state
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchFavorite, setSearchFavorite] = useState<string>("");
+    const [searchSkip, setSearchSkip] = useState<string>("");
 
     // Notification manager hook
     const { subscription } = useNotificationManager();
@@ -260,6 +267,28 @@ export default function SignedInContent({ session }: { session: Session }) {
         }
     };
 
+    // Filter rows based on search criteria
+    const filteredRows = rows.filter(row => {
+        // MusicID prefix match
+        const musicIdMatch = !searchTerm || row.music_id.toLowerCase().startsWith(searchTerm.toLowerCase());
+        
+        // Title partial match
+        const titleMatch = !searchTerm || row.title.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Favorite filter
+        const favoriteMatch = !searchFavorite || 
+            (searchFavorite === "true" && row.favorite) || 
+            (searchFavorite === "false" && !row.favorite);
+        
+        // Skip filter
+        const skipMatch = !searchSkip || 
+            (searchSkip === "true" && row.skip) || 
+            (searchSkip === "false" && !row.skip);
+        
+        // Match if MusicID OR Title matches, AND favorite AND skip match
+        return (musicIdMatch || titleMatch) && favoriteMatch && skipMatch;
+    });
+
     return (
         <>
             <AppBar position="static" color="default" elevation={1}>
@@ -285,6 +314,52 @@ export default function SignedInContent({ session }: { session: Session }) {
                         </Button>
                         <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
                     </div>
+                    
+                    {/* Search filters */}
+                    <Box sx={{ 
+                        maxWidth: { xs: 'none', sm: 600 }, 
+                        margin: { xs: '16px 0', sm: '16px auto' },
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 2,
+                        alignItems: { xs: 'stretch', sm: 'center' }
+                    }}>
+                        <TextField
+                            size="small"
+                            label="検索 (ID/タイトル)"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="ID または タイトルで検索"
+                            sx={{ flexGrow: 1 }}
+                        />
+                        <TextField
+                            size="small"
+                            select
+                            label="お気に入り"
+                            value={searchFavorite}
+                            onChange={(e) => setSearchFavorite(e.target.value)}
+                            SelectProps={{ native: true }}
+                            sx={{ minWidth: 120 }}
+                        >
+                            <option value="">すべて</option>
+                            <option value="true">○</option>
+                            <option value="false">×</option>
+                        </TextField>
+                        <TextField
+                            size="small"
+                            select
+                            label="スキップ"
+                            value={searchSkip}
+                            onChange={(e) => setSearchSkip(e.target.value)}
+                            SelectProps={{ native: true }}
+                            sx={{ minWidth: 120 }}
+                        >
+                            <option value="">すべて</option>
+                            <option value="true">○</option>
+                            <option value="false">×</option>
+                        </TextField>
+                    </Box>
+                    
                     <div className={styles.tableWrapper}>
                         <TableContainer component={Paper} sx={{
                             maxWidth: { xs: 'none', sm: 600 },
@@ -301,7 +376,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {rows.map((row) =>
+                                    {filteredRows.map((row) =>
                                         <TableRow key={row.music_id}>
                                             <TableCell>{row.music_id}</TableCell>
                                             <TableCell>{row.title}</TableCell>
