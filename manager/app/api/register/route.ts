@@ -19,12 +19,33 @@ function encryptPassword(password: string, base64Key: string): string {
     return encrypted.toString("base64");
 }
 
+// Lambda を warmup する関数
+async function warmupLambda(): Promise<boolean> {
+    try {
+        const response = await fetch(LAMBDA_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ health_check: true }),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error("Lambda warmup failed:", error);
+        return false;
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { email, password, id_list, subscription }: IRegisterRequest = await req.json();
 
         // パスワード暗号化
         const encrypted_password = encryptPassword(password, SHARED_SECRET_KEY);
+
+        // まずLambdaをwarmupする
+        const warmupSuccess = await warmupLambda();
+        if (!warmupSuccess) {
+            console.warn("Lambda warmup failed, but proceeding with registration request");
+        }
 
         // Lambda呼び出し（非同期・fire-and-forget）
         fetch(LAMBDA_ENDPOINT, {
