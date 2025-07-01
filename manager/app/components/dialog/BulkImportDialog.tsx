@@ -278,7 +278,7 @@ export default function BulkImportDialog({
                                     <TableCell align="center" sx={{ width: { xs: 60, sm: 80 }, minWidth: 60 }}>行番号</TableCell>
                                     <TableCell sx={{ width: { xs: 180, sm: 200 }, minWidth: 180 }}>ID</TableCell>
                                     <TableCell sx={{ minWidth: 200 }}>タイトル</TableCell>
-                                    <TableCell align="center" sx={{ width: { xs: 60, sm: 80 }, minWidth: 60 }}>削除</TableCell>
+
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -330,17 +330,7 @@ export default function BulkImportDialog({
                                                 }}
                                             />
                                         </TableCell>
-                                        <TableCell align="center">
-                                            <Button
-                                                size="small"
-                                                onClick={() => deleteRow(row.id)}
-                                                disabled={importing || rows.length === 1}
-                                                color="error"
-                                                variant="outlined"
-                                            >
-                                                削除
-                                            </Button>
-                                        </TableCell>
+
                                     </TableRow>
                                 ))}
                             </TableBody>

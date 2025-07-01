@@ -304,36 +304,7 @@ export default function SearchDialog({
                     {/* Search results */}
                     {searchResults.length > 0 && (
                         <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle2" gutterBottom>
-                                検索結果
-                            </Typography>
-                            <List sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid #ddd', borderRadius: 1 }}>
-                                {searchResults.map((result) => (
-                                    <Box key={result.contentId} sx={{ display: 'flex', alignItems: 'center' }}>
-                                        <ListItem disablePadding sx={{ flex: 1 }}>
-                                            <ListItemButton onClick={() => handleSelectResult(result)}>
-                                                <ListItemText
-                                                    primary={result.title}
-                                                    secondary={
-                                                        <Typography variant="caption" display="block">
-                                                            ID: {result.contentId}
-                                                        </Typography>
-                                                    }
-                                                />
-                                            </ListItemButton>
-                                        </ListItem>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            sx={{ ml: 1 }}
-                                            onClick={() => handleAdd(result)}
-                                            disabled={registeredMusicIds.includes(result.contentId)}
-                                        >
-                                            追加
-                                        </Button>
-                                    </Box>
-                                ))}
-                            </List>
+
                         </Box>
                     )}
                 </Box>
