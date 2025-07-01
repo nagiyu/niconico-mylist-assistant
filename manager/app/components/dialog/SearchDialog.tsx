@@ -3,6 +3,7 @@ interface SearchDialogProps {
     open: boolean;
     onClose: () => void;
     onRegister: (data: { music_id: string; title: string }) => void;
+    onAdd?: (data: { music_id: string; title: string }) => void;
     registeredMusicIds: string[];
 }
 
@@ -26,6 +27,8 @@ interface SearchDialogProps {
     open: boolean;
     onClose: () => void;
     onRegister: (data: { music_id: string; title: string }) => void;
+    onAdd?: (data: { music_id: string; title: string }) => void;
+    registeredMusicIds: string[];
 }
 
 interface SearchResult {
@@ -42,6 +45,7 @@ export default function SearchDialog({
     open,
     onClose,
     onRegister,
+    onAdd,
     registeredMusicIds
 }: SearchDialogProps) {
     const [musicId, setMusicId] = useState("");
@@ -103,7 +107,12 @@ export default function SearchDialog({
 
     // Handle add button click
     const handleAdd = (result: SearchResult) => {
-        onRegister({ music_id: result.contentId, title: result.title });
+        if (onAdd) {
+            onAdd({ music_id: result.contentId, title: result.title });
+        } else {
+            // Fallback to onRegister if onAdd is not provided
+            onRegister({ music_id: result.contentId, title: result.title });
+        }
     }
 
     // Extract Music ID from URL
