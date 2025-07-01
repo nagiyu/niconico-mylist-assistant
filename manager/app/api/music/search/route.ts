@@ -35,6 +35,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  console.log(`[Search API] Starting search request`);
+  console.log(`[Search API] User authenticated: ${userId}`);
+  console.log(`[Search API] Searching for keyword: ${keyword}`);
+
   try {
     // Niconico 検索APIを呼び出し
     // 再生回数順でソート、上位5件を取得
@@ -46,14 +50,28 @@ export async function GET(req: NextRequest) {
       `&_limit=5` +
       `&_context=niconico-mylist-assistant`;
 
+    console.log(`[Search API] Calling Niconico API: ${searchUrl}`);
+
     const response = await fetch(searchUrl, {
       headers: {
-        'User-Agent': 'niconico-mylist-assistant'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'ja-JP,ja;q=0.9,en;q=0.8',
+        'Referer': 'https://www.nicovideo.jp/',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site'
       }
     });
 
+    console.log(`[Search API] Niconico API response status: ${response.status}`);
+
     if (!response.ok) {
-      console.error("Search API error:", response.status, response.statusText);
+      const errorText = await response.text();
+      console.error(`[Search API] Niconico API error: ${response.status} ${response.statusText}`);
+      console.error(`[Search API] Error response body: ${errorText}`);
       return NextResponse.json({
         status: "failure",
         message: "検索APIのエラーが発生しました"
@@ -61,6 +79,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
+    console.log(`[Search API] Successfully received search results: ${data.data?.length || 0} items`);
 
     if (!data.data || !Array.isArray(data.data)) {
       return NextResponse.json({
