@@ -104,6 +104,8 @@ export default function SearchDialog({
     // Handle add button click
     const handleAdd = (result: SearchResult) => {
         onRegister({ music_id: result.contentId, title: result.title });
+        // Do not close the dialog on add
+        // onClose();
     }
 
     // Extract Music ID from URL
