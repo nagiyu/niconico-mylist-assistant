@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 
 interface AutoDialogProps {
     open: boolean;
-    onClose: () => void;
+    onClose: (event: {}, reason: "backdropClick" | "escapeKeyDown" | "closeButtonClick" | "other") => void;
     onAuto: (params: { email: string; password: string; mylistTitle: string; count: number }) => void;
     rowsCount: number; // Number of rows for default count
 }
@@ -184,7 +184,7 @@ export default function AutoDialog({
                 />
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>キャンセル</Button>
+                <Button onClick={(event) => onClose(event, 'closeButtonClick')}>キャンセル</Button>
                 <Button 
                     variant="contained" 
                     color="secondary" 
