@@ -324,7 +324,7 @@ export default function SearchDialog({
                                             variant="outlined"
                                             size="small"
                                             sx={{ ml: 1 }}
-                                            onClick={() => handleAddClick(result)
+                                            onClick={() => handleAddClick(result)}
                                             disabled={registeredMusicIds.includes(result.contentId)}
                                         >
                                             追加
