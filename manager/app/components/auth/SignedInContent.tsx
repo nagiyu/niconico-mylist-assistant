@@ -527,6 +527,49 @@ export default function SignedInContent({ session }: { session: Session }) {
             <SearchDialog
                 open={searchDialogOpen}
                 onClose={() => setSearchDialogOpen(false)}
+                onAdd={async (data) => {
+                    // Create new music item for add action (don't close dialog)
+                    const newItem: IMusic = {
+                        music_common_id: "",
+                        user_music_setting_id: "",
+                        music_id: data.music_id,
+                        title: data.title,
+                        favorite: false,
+                        skip: false,
+                        memo: "",
+                    };
+
+                    try {
+                        const response = await fetch("/api/music", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                music_id: newItem.music_id,
+                                title: newItem.title,
+                                favorite: newItem.favorite,
+                                skip: newItem.skip,
+                                memo: newItem.memo,
+                            }),
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            const addedItem = {
+                                ...newItem,
+                                music_common_id: result.music_common_id,
+                                user_music_setting_id: result.user_music_setting_id,
+                            };
+                            updateLocalCache(addedItem, 'create');
+                            // Don't close dialog - allow multiple additions
+                        } else {
+                            const errorData = await response.json();
+                            alert("登録に失敗しました: " + JSON.stringify(errorData));
+                        }
+                    } catch (error) {
+                        console.error("Error adding music:", error);
+                        alert("登録中にエラーが発生しました");
+                    }
+                }}
                 onRegister={async (data) => {
                     // Create new music item similar to handleAdd
                     const newItem: IMusic = {
