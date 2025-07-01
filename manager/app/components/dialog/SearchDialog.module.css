@@ -1,11 +1,11 @@
 .searchDialogPaper {
-  background: #fff !important;
+  background: unset !important;
   color: #171717 !important;
 }
 
 @media (prefers-color-scheme: dark) {
   .searchDialogPaper {
-    background: #222 !important;
+    background: unset !important;
     color: #ededed !important;
   }
 }
