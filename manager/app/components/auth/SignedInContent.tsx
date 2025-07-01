@@ -16,6 +16,11 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import { useState } from "react";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
@@ -319,45 +324,93 @@ export default function SignedInContent({ session }: { session: Session }) {
                     <Box sx={{
                         maxWidth: { xs: 'none', sm: 600 },
                         margin: { xs: '16px 0', sm: '16px auto' },
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        gap: 2,
-                        alignItems: { xs: 'stretch', sm: 'center' }
+                        padding: { xs: '16px', sm: '24px' },
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 2,
+                        backgroundColor: '#fafafa'
                     }}>
-                        <TextField
-                            size="small"
-                            label="検索 (ID/タイトル)"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="ID または タイトルで検索"
-                            sx={{ flexGrow: 1, backgroundColor: "#fff" }}
-                        />
-                        <TextField
-                            size="small"
-                            select
-                            label="お気に入り"
-                            value={searchFavorite}
-                            onChange={(e) => setSearchFavorite(e.target.value)}
-                            SelectProps={{ native: true }}
-                            sx={{ minWidth: 120, backgroundColor: "#fff" }}
-                        >
-                            <option value="">すべて</option>
-                            <option value="true">○</option>
-                            <option value="false">×</option>
-                        </TextField>
-                        <TextField
-                            size="small"
-                            select
-                            label="スキップ"
-                            value={searchSkip}
-                            onChange={(e) => setSearchSkip(e.target.value)}
-                            SelectProps={{ native: true }}
-                            sx={{ minWidth: 120, backgroundColor: "#fff" }}
-                        >
-                            <option value="">すべて</option>
-                            <option value="true">○</option>
-                            <option value="false">×</option>
-                        </TextField>
+                        <Stack spacing={2}>
+                            {/* Search term */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 2 }
+                            }}>
+                                <Typography variant="body2" sx={{ 
+                                    fontWeight: 500, 
+                                    minWidth: { xs: 'auto', sm: '140px' },
+                                    textAlign: { xs: 'left', sm: 'left' }
+                                }}>
+                                    検索 (ID/タイトル):
+                                </Typography>
+                                <TextField
+                                    size="small"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="ID または タイトルで検索"
+                                    fullWidth
+                                    variant="outlined"
+                                    sx={{ backgroundColor: "#fff" }}
+                                />
+                            </Box>
+                            
+                            {/* Favorite filter */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 2 }
+                            }}>
+                                <Typography variant="body2" sx={{ 
+                                    fontWeight: 500, 
+                                    minWidth: { xs: 'auto', sm: '140px' },
+                                    textAlign: { xs: 'left', sm: 'left' }
+                                }}>
+                                    お気に入り:
+                                </Typography>
+                                <FormControl size="small" fullWidth>
+                                    <Select
+                                        value={searchFavorite}
+                                        onChange={(e) => setSearchFavorite(e.target.value)}
+                                        displayEmpty
+                                        sx={{ backgroundColor: "#fff" }}
+                                    >
+                                        <MenuItem value="">すべて</MenuItem>
+                                        <MenuItem value="true">○</MenuItem>
+                                        <MenuItem value="false">×</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                            
+                            {/* Skip filter */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 2 }
+                            }}>
+                                <Typography variant="body2" sx={{ 
+                                    fontWeight: 500, 
+                                    minWidth: { xs: 'auto', sm: '140px' },
+                                    textAlign: { xs: 'left', sm: 'left' }
+                                }}>
+                                    スキップ:
+                                </Typography>
+                                <FormControl size="small" fullWidth>
+                                    <Select
+                                        value={searchSkip}
+                                        onChange={(e) => setSearchSkip(e.target.value)}
+                                        displayEmpty
+                                        sx={{ backgroundColor: "#fff" }}
+                                    >
+                                        <MenuItem value="">すべて</MenuItem>
+                                        <MenuItem value="true">○</MenuItem>
+                                        <MenuItem value="false">×</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                        </Stack>
                     </Box>
 
                     <div className={styles.tableWrapper}>
