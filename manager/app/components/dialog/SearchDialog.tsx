@@ -248,9 +248,16 @@ export default function SearchDialog({
     const handleRegister = () => {
         if (validateForm()) {
             onRegister({ music_id: musicId.trim(), title: title.trim() });
-            onClose();
+            // Do not close the dialog on add
+            // onClose();
         }
     };
+               const handleAddClick = (result: SearchResult) => {
+                       handleAdd(result);
+                       // Prevent dialog from closing on add
+               };
+
+
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
@@ -317,7 +324,7 @@ export default function SearchDialog({
                                             variant="outlined"
                                             size="small"
                                             sx={{ ml: 1 }}
-                                            onClick={() => handleAdd(result)}
+                                            onClick={() => handleAddClick(result)
                                             disabled={registeredMusicIds.includes(result.contentId)}
                                         >
                                             追加
