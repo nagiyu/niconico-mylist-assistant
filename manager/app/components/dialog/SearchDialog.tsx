@@ -205,20 +205,31 @@ export default function SearchDialog({
         setSearchResults([]);
 
         try {
+            console.log("[SearchDialog] Starting search for keyword:", keyword);
             const response = await fetch(`/api/music/search?q=${encodeURIComponent(keyword)}`);
             const data = await response.json();
 
+            console.log("[SearchDialog] Search API response:", {
+                ok: response.ok,
+                status: response.status,
+                dataStatus: data.status,
+                resultsCount: data.results ? data.results.length : 0
+            });
+
             if (!response.ok) {
+                console.error("[SearchDialog] API request failed:", response.status, data);
                 throw new Error(data.error || "Failed to search videos");
             }
 
             if (data.status === "success" && data.results) {
+                console.log("[SearchDialog] Search successful, got", data.results.length, "results");
                 setSearchResults(data.results);
             } else {
+                console.error("[SearchDialog] Search failed:", data.message);
                 setSearchError(data.message || "検索に失敗しました");
             }
         } catch (error) {
-            console.error("Error searching videos:", error);
+            console.error("[SearchDialog] Error searching videos:", error);
             setSearchError("検索中にエラーが発生しました");
         } finally {
             setIsSearching(false);

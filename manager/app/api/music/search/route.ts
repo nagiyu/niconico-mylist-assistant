@@ -18,22 +18,30 @@ interface SearchResponse {
 }
 
 export async function GET(req: NextRequest) {
+  console.log("[Search API] Starting search request");
+  
   // 認証チェック
   const userId = await getGoogleUserIdFromSession();
   if (!userId) {
+    console.log("[Search API] Authentication failed - no user ID");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  
+  console.log("[Search API] User authenticated:", userId);
 
   // クエリパラメータから検索キーワードを取得
   const { searchParams } = new URL(req.url);
   const keyword = searchParams.get("q");
 
   if (!keyword) {
+    console.log("[Search API] No search keyword provided");
     return NextResponse.json(
       { error: "search keyword (q) is required" }, 
       { status: 400 }
     );
   }
+  
+  console.log("[Search API] Searching for keyword:", keyword);
 
   try {
     // Niconico 検索APIを呼び出し
@@ -46,14 +54,25 @@ export async function GET(req: NextRequest) {
       `&_limit=5` +
       `&_context=niconico-mylist-assistant`;
 
+    console.log("[Search API] Calling Niconico API:", searchUrl);
+
     const response = await fetch(searchUrl, {
       headers: {
         'User-Agent': 'niconico-mylist-assistant'
       }
     });
 
+    console.log("[Search API] Niconico API response status:", response.status);
+
     if (!response.ok) {
-      console.error("Search API error:", response.status, response.statusText);
+      console.error("[Search API] Niconico API error:", response.status, response.statusText);
+      // Try to get error response body for better debugging
+      try {
+        const errorText = await response.text();
+        console.error("[Search API] Error response body:", errorText);
+      } catch (e) {
+        console.error("[Search API] Could not read error response body");
+      }
       return NextResponse.json({
         status: "failure",
         message: "検索APIのエラーが発生しました"
@@ -61,8 +80,15 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
+    console.log("[Search API] Response data structure:", {
+      hasData: !!data.data,
+      dataType: typeof data.data,
+      isArray: Array.isArray(data.data),
+      dataLength: data.data ? data.data.length : 0
+    });
 
     if (!data.data || !Array.isArray(data.data)) {
+      console.error("[Search API] Invalid response format from Niconico API:", data);
       return NextResponse.json({
         status: "failure",
         message: "検索結果が見つかりませんでした"
@@ -79,6 +105,8 @@ export async function GET(req: NextRequest) {
       thumbnailUrl: item.thumbnailUrl || ""
     }));
 
+    console.log("[Search API] Successfully processed", results.length, "search results");
+
     const result: SearchResponse = {
       status: "success",
       results: results
@@ -87,7 +115,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error("Error calling search API:", error);
+    console.error("[Search API] Error calling search API:", error);
     return NextResponse.json({
       status: "failure",
       message: "検索中にエラーが発生しました"
