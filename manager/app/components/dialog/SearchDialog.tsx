@@ -57,12 +57,7 @@ export default function SearchDialog({
     });
     const [isLoadingInfo, setIsLoadingInfo] = useState(false);
     const [infoError, setInfoError] = useState<string>("");
-    const registeredMusicIds = React.useMemo(() => {
-        // Assuming onRegister adds to some external state, we need to get the list of already registered music IDs
-        // This should be passed as a prop or fetched from context/store
-        // For now, let's assume it's passed as a prop named `registeredMusicIds`
-        return props.registeredMusicIds || [];
-    }, [props.registeredMusicIds]);
+
 
 
 
