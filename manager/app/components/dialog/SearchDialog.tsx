@@ -1,4 +1,12 @@
 import Dialog from "@mui/material/Dialog";
+interface SearchDialogProps {
+    open: boolean;
+    onClose: () => void;
+    onRegister: (data: { music_id: string; title: string }) => void;
+    registeredMusicIds: string[];
+}
+
+
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
@@ -34,6 +42,7 @@ export default function SearchDialog({
     open,
     onClose,
     onRegister,
+    registeredMusicIds
 }: SearchDialogProps) {
     const [musicId, setMusicId] = useState("");
     const [title, setTitle] = useState("");
@@ -48,6 +57,14 @@ export default function SearchDialog({
     });
     const [isLoadingInfo, setIsLoadingInfo] = useState(false);
     const [infoError, setInfoError] = useState<string>("");
+    const registeredMusicIds = React.useMemo(() => {
+        // Assuming onRegister adds to some external state, we need to get the list of already registered music IDs
+        // This should be passed as a prop or fetched from context/store
+        // For now, let's assume it's passed as a prop named `registeredMusicIds`
+        return props.registeredMusicIds || [];
+    }, [props.registeredMusicIds]);
+
+
 
     // Validation function
     const validateField = (field: string, value: string): string => {
@@ -306,6 +323,7 @@ export default function SearchDialog({
                                             size="small"
                                             sx={{ ml: 1 }}
                                             onClick={() => handleAdd(result)}
+                                            disabled={registeredMusicIds.includes(result.contentId)}
                                         >
                                             追加
                                         </Button>
