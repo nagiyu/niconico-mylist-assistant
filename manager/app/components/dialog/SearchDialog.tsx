@@ -262,7 +262,12 @@ export default function SearchDialog({
 
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
+        <Dialog open={open} onClose={(event, reason) => {
+                if (reason === 'backdropClick') {
+                    return;
+                }
+                onClose();
+            }} maxWidth="md" fullWidth
             PaperProps={{ className: styles.searchDialogPaper }}
         >
             <DialogTitle>検索</DialogTitle>
