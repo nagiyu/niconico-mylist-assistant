@@ -53,6 +53,8 @@ interface BulkImportResponse {
 }
 
 export default function SignedInContent({ session }: { session: Session }) {
+       const [shouldKeepSearchDialogOpen, setShouldKeepSearchDialogOpen] = useState(false);
+
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editData, setEditData] = useState<IMusic | null>(null);
 
@@ -312,7 +314,11 @@ export default function SignedInContent({ session }: { session: Session }) {
             <main className={styles.main}>
                 <>
                     <div className={styles.buttonContainer}>
-                        <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
+                        <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={() => {
+                            setShouldKeepSearchDialogOpen(true);
+                            setSearchDialogOpen(true);
+                            handleAdd();
+                        }}>Add</Button>
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                         <Button variant="contained" color="success" sx={{ minWidth: 80 }} onClick={() => setSearchDialogOpen(true)}>Search</Button>
@@ -560,7 +566,8 @@ export default function SignedInContent({ session }: { session: Session }) {
                                 user_music_setting_id: result.user_music_setting_id,
                             };
                             updateLocalCache(addedItem, 'create');
-                            setSearchDialogOpen(false);
+                            setShouldKeepSearchDialogOpen(false);
+setSearchDialogOpen(false);
                         } else {
                             const errorData = await response.json();
                             alert("登録に失敗しました: " + JSON.stringify(errorData));
