@@ -76,6 +76,8 @@ export default function SignedInContent({ session }: { session: Session }) {
     const { subscription } = useNotificationManager();
 
     // APIからデータ取得する関数
+    const registeredMusicIds = rows.map(row => row.music_id);
+
     const fetchMusic = async () => {
         const res = await fetch("/api/music");
         if (res.status === 401) {
@@ -568,6 +570,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         alert("登録中にエラーが発生しました");
                     }
                 }}
+                registeredMusicIds={registeredMusicIds}
             />
         </>
     );
