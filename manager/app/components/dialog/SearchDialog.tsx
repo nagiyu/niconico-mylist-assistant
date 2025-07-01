@@ -89,6 +89,11 @@ export default function SearchDialog({
         }
     }, [open]);
 
+    // Handle add button click
+    const handleAdd = (result: SearchResult) => {
+        onRegister({ music_id: result.contentId, title: result.title });
+    }
+
     // Extract Music ID from URL
     const extractMusicIdFromUrl = (inputUrl: string): string | null => {
         if (!inputUrl) return null;
@@ -300,7 +305,7 @@ export default function SearchDialog({
                                             variant="outlined"
                                             size="small"
                                             sx={{ ml: 1 }}
-                                            // onClick={...} // 実装は別途
+                                            onClick={() => handleAdd(result)}
                                         >
                                             追加
                                         </Button>
