@@ -11,8 +11,6 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import ListItemAvatar from "@mui/material/ListItemAvatar";
-import Avatar from "@mui/material/Avatar";
 import { useState, useEffect, useRef } from "react";
 import styles from "./SearchDialog.module.css";
 
@@ -25,11 +23,6 @@ interface SearchDialogProps {
 interface SearchResult {
     contentId: string;
     title: string;
-    description: string;
-    tags: string;
-    viewCounter: number;
-    startTime: string;
-    thumbnailUrl: string;
 }
 
 interface ValidationErrors {
@@ -286,32 +279,19 @@ export default function SearchDialog({
                     {searchResults.length > 0 && (
                         <Box sx={{ mb: 2 }}>
                             <Typography variant="subtitle2" gutterBottom>
-                                検索結果 (再生回数順)
+                                検索結果
                             </Typography>
                             <List sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid #ddd', borderRadius: 1 }}>
                                 {searchResults.map((result) => (
                                     <ListItem key={result.contentId} disablePadding>
                                         <ListItemButton onClick={() => handleSelectResult(result)}>
-                                            <ListItemAvatar>
-                                                <Avatar 
-                                                    src={result.thumbnailUrl} 
-                                                    variant="rounded"
-                                                    sx={{ width: 60, height: 45 }}
-                                                />
-                                            </ListItemAvatar>
                                             <ListItemText
                                                 primary={result.title}
                                                 secondary={
-                                                    <Box>
-                                                        <Typography variant="caption" display="block">
-                                                            ID: {result.contentId}
-                                                        </Typography>
-                                                        <Typography variant="caption" display="block">
-                                                            再生回数: {result.viewCounter.toLocaleString()}回
-                                                        </Typography>
-                                                    </Box>
+                                                    <Typography variant="caption" display="block">
+                                                        ID: {result.contentId}
+                                                    </Typography>
                                                 }
-                                                sx={{ ml: 1 }}
                                             />
                                         </ListItemButton>
                                     </ListItem>

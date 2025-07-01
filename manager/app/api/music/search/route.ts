@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGoogleUserIdFromSession } from "@shared/auth";
 import * as cheerio from 'cheerio';
+import { getVideoInfo } from "../utils/videoInfo";
 
 interface SearchResult {
   contentId: string;
   title: string;
-  description: string;
-  tags: string;
-  viewCounter: number;
-  startTime: string;
-  thumbnailUrl: string;
 }
 
 interface SearchResponse {
@@ -60,9 +56,9 @@ export async function GET(req: NextRequest) {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    const results: SearchResult[] = [];
+    const videoIds: string[] = [];
     
-    // Niconicoの検索結果をパース
+    // ニコニコの検索結果からビデオIDのみを抽出
     // 様々な可能性のあるセレクタを試す
     const searchResultSelectors = [
       '[data-video-id]',           // data-video-id属性を持つ要素
@@ -78,16 +74,10 @@ export async function GET(req: NextRequest) {
       const elements = $(selector);
       if (elements.length > 0) {
         elements.each((index, element) => {
-          if (results.length >= 5) return false; // 最大5件まで
+          if (videoIds.length >= 5) return false; // 最大5件まで
           
           const $el = $(element);
           let contentId = '';
-          let title = '';
-          let description = '';
-          let tags = '';
-          let viewCounter = 0;
-          let startTime = '';
-          let thumbnailUrl = '';
 
           // contentIdの抽出
           contentId = $el.attr('data-video-id') || '';
@@ -100,62 +90,12 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          if (!contentId) return; // contentIdが取得できない場合はスキップ
-
-          // タイトルの抽出
-          title = $el.find('.itemTitle a').text().trim() ||
-                  $el.find('a[data-video-id]').attr('title') ||
-                  $el.find('.videoTitle').text().trim() ||
-                  $el.find('h3').text().trim() ||
-                  $el.find('.title').text().trim() ||
-                  '';
-
-          // 説明文の抽出
-          description = $el.find('.itemDescription').text().trim() ||
-                       $el.find('.description').text().trim() ||
-                       '';
-
-          // タグの抽出
-          const tagElements = $el.find('.itemTag, .tag');
-          if (tagElements.length > 0) {
-            const tagArray: string[] = [];
-            tagElements.each((_, tagEl) => {
-              const tagText = $(tagEl).text().trim();
-              if (tagText) tagArray.push(tagText);
-            });
-            tags = tagArray.join(' ');
-          }
-
-          // 再生回数の抽出
-          const viewText = $el.find('.count .play, .playCount, .viewCount').text().trim();
-          const viewMatch = viewText.match(/[\d,]+/);
-          if (viewMatch) {
-            viewCounter = parseInt(viewMatch[0].replace(/,/g, ''), 10) || 0;
-          }
-
-          // 投稿日時の抽出
-          startTime = $el.find('.itemTime, .time, .postAt').text().trim() || '';
-
-          // サムネイルURLの抽出
-          thumbnailUrl = $el.find('img').attr('src') || 
-                        $el.find('img').attr('data-src') || 
-                        '';
-
-          // 結果に追加
-          if (contentId && title) {
-            results.push({
-              contentId,
-              title,
-              description,
-              tags,
-              viewCounter,
-              startTime,
-              thumbnailUrl
-            });
+          if (contentId && !videoIds.includes(contentId)) {
+            videoIds.push(contentId);
           }
         });
         
-        if (results.length > 0) {
+        if (videoIds.length > 0) {
           foundResults = true;
           break;
         }
@@ -165,33 +105,48 @@ export async function GET(req: NextRequest) {
     // HTMLパースがうまくいかない場合、より柔軟なアプローチ
     if (!foundResults) {
       // 動画IDパターンでHTMLから直接検索
-      const videoIdPattern = /['"](sm\d+|so\d+|nm\d+)['"][\s\S]*?title['"]\s*:\s*['"]([^'"]+)['"]/g;
+      const videoIdPattern = /['"](sm\d+|so\d+|nm\d+)['"][\s\S]*?/g;
       let match;
       let videoCount = 0;
       
       while ((match = videoIdPattern.exec(html)) !== null && videoCount < 5) {
         const contentId = match[1];
-        const title = match[2];
         
-        if (contentId && title) {
-          results.push({
-            contentId,
-            title,
-            description: '',
-            tags: '',
-            viewCounter: 0,
-            startTime: '',
-            thumbnailUrl: ''
-          });
+        if (contentId && !videoIds.includes(contentId)) {
+          videoIds.push(contentId);
           videoCount++;
         }
+      }
+    }
+
+    if (videoIds.length === 0) {
+      return NextResponse.json({
+        status: "failure",
+        message: "検索結果が見つかりませんでした"
+      });
+    }
+
+    // 各ビデオIDについてタイトルを取得
+    const results: SearchResult[] = [];
+    for (const videoId of videoIds) {
+      try {
+        const videoInfo = await getVideoInfo(videoId);
+        if (videoInfo.success && videoInfo.title) {
+          results.push({
+            contentId: videoId,
+            title: videoInfo.title
+          });
+        }
+      } catch (error) {
+        console.error(`Error getting info for video ${videoId}:`, error);
+        // エラーが発生した場合はスキップして続行
       }
     }
 
     if (results.length === 0) {
       return NextResponse.json({
         status: "failure",
-        message: "検索結果が見つかりませんでした"
+        message: "動画情報の取得に失敗しました"
       });
     }
 
