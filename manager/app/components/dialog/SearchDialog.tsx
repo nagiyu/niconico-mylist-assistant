@@ -283,18 +283,28 @@ export default function SearchDialog({
                             </Typography>
                             <List sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid #ddd', borderRadius: 1 }}>
                                 {searchResults.map((result) => (
-                                    <ListItem key={result.contentId} disablePadding>
-                                        <ListItemButton onClick={() => handleSelectResult(result)}>
-                                            <ListItemText
-                                                primary={result.title}
-                                                secondary={
-                                                    <Typography variant="caption" display="block">
-                                                        ID: {result.contentId}
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
+                                    <Box key={result.contentId} sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <ListItem disablePadding sx={{ flex: 1 }}>
+                                            <ListItemButton onClick={() => handleSelectResult(result)}>
+                                                <ListItemText
+                                                    primary={result.title}
+                                                    secondary={
+                                                        <Typography variant="caption" display="block">
+                                                            ID: {result.contentId}
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItemButton>
+                                        </ListItem>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            sx={{ ml: 1 }}
+                                            // onClick={...} // 実装は別途
+                                        >
+                                            追加
+                                        </Button>
+                                    </Box>
                                 ))}
                             </List>
                         </Box>
