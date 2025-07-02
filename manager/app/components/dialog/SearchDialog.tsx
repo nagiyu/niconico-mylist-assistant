@@ -1,13 +1,4 @@
 import Dialog from "@mui/material/Dialog";
-interface SearchDialogProps {
-    open: boolean;
-    onClose: () => void;
-    onRegister: (data: { music_id: string; title: string }) => void;
-    onAdd?: (data: { music_id: string; title: string }) => void;
-    registeredMusicIds: string[];
-}
-
-
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
@@ -20,8 +11,10 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import styles from "./SearchDialog.module.css";
+import { ValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
+import { useVideoInfo } from "@/hooks/useVideoInfo";
 
 interface SearchDialogProps {
     open: boolean;
@@ -33,11 +26,6 @@ interface SearchDialogProps {
 
 interface SearchResult {
     contentId: string;
-    title: string;
-}
-
-interface ValidationErrors {
-    music_id: string;
     title: string;
 }
 
@@ -59,20 +47,12 @@ export default function SearchDialog({
         music_id: "",
         title: "",
     });
-    const [isLoadingInfo, setIsLoadingInfo] = useState(false);
-    const [infoError, setInfoError] = useState<string>("");
+    const { isLoading: isLoadingInfo, error: infoError, fetchVideoInfo } = useVideoInfo();
 
-
-
-
-    // Validation function
-    const validateField = (field: string, value: string): string => {
-        if (field === "music_id" || field === "title") {
-            if (!value || value.trim() === "") {
-                return `${field === "music_id" ? "ID" : "タイトル"}は必須です`;
-            }
-        }
-        return "";
+    // Real-time validation on field change
+    const handleFieldChange = (field: keyof ValidationErrors, value: string) => {
+        const error = validateField(field, value);
+        setErrors(prev => ({ ...prev, [field]: error }));
     };
 
     // Validate all fields
@@ -82,13 +62,7 @@ export default function SearchDialog({
             title: validateField("title", title),
         };
         setErrors(newErrors);
-        return !newErrors.music_id && !newErrors.title;
-    };
-
-    // Real-time validation on field change
-    const handleFieldChange = (field: keyof ValidationErrors, value: string) => {
-        const error = validateField(field, value);
-        setErrors(prev => ({ ...prev, [field]: error }));
+        return !hasValidationErrors(newErrors);
     };
 
     // Reset form when dialog opens/closes
@@ -101,7 +75,6 @@ export default function SearchDialog({
             setSearchResults([]);
             setSearchError("");
             setErrors({ music_id: "", title: "" });
-            setInfoError("");
         }
     }, [open]);
 
@@ -144,7 +117,6 @@ export default function SearchDialog({
             if (extractedId) {
                 setMusicId(extractedId);
                 handleFieldChange("music_id", extractedId);
-                setInfoError(""); // Clear any previous errors
             }
         } else {
             // Clear MusicID when URL is cleared
@@ -167,7 +139,6 @@ export default function SearchDialog({
             if (extractedId) {
                 setMusicId(extractedId);
                 handleFieldChange("music_id", extractedId);
-                setInfoError(""); // Clear any previous errors
             } else {
                 alert("有効なニコニコ動画のURLまたはIDを入力してください\n例: sm12345678, https://www.nicovideo.jp/watch/sm12345678");
             }
@@ -180,34 +151,13 @@ export default function SearchDialog({
     // Fetch video info from Niconico API
     const handleGetInfo = async () => {
         const trimmedMusicId = musicId.trim();
-        if (!trimmedMusicId) {
-            setInfoError("IDを入力してください");
-            return;
-        }
+        if (!trimmedMusicId) return;
 
-        setIsLoadingInfo(true);
-        setInfoError("");
-
-        try {
-            const response = await fetch(`/api/music/info?video_id=${encodeURIComponent(trimmedMusicId)}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to fetch video info");
-            }
-
-            if (data.status === "success" && data.title) {
-                setTitle(data.title);
-                // Clear title validation error if title was successfully fetched
-                setErrors(prev => ({ ...prev, title: "" }));
-            } else {
-                setInfoError(data.message || "情報の取得に失敗しました");
-            }
-        } catch (error) {
-            console.error("Error fetching video info:", error);
-            setInfoError("情報の取得中にエラーが発生しました");
-        } finally {
-            setIsLoadingInfo(false);
+        const fetchedTitle = await fetchVideoInfo(trimmedMusicId);
+        if (fetchedTitle) {
+            setTitle(fetchedTitle);
+            // Clear title validation error if title was successfully fetched
+            setErrors(prev => ({ ...prev, title: "" }));
         }
     };
 
@@ -251,7 +201,6 @@ export default function SearchDialog({
         setUrl(""); // Clear URL field since we selected from search
         handleFieldChange("music_id", result.contentId);
         handleFieldChange("title", result.title);
-        setInfoError(""); // Clear any previous errors
     };
 
     const handleRegister = () => {
