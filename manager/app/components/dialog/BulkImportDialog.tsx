@@ -118,24 +118,25 @@ export default function BulkImportDialog({
         fetchData();
     }, []);
 
-    const updateRow = (id: number, field: keyof Omit<BulkImportRow, 'id' | 'music_id_error' | 'title_error' | 'isLoadingTitle'>, value: string) => {
-        setRows(prev => prev.map(row => {
-            if (row.id === id) {
-                const updatedRow = { ...row, [field]: value };
+    // Remove duplicate declaration of updateRow
+    // const updateRow = (id: number, field: keyof Omit<BulkImportRow, 'id' | 'music_id_error' | 'title_error' | 'isLoadingTitle'>, value: string) => {
+    //     setRows(prev => prev.map(row => {
+    //         if (row.id === id) {
+    //             const updatedRow = { ...row, [field]: value };
 
-                // Validate the fields
-                const error = validateField(field, value);
-                if (field === 'music_id') {
-                    updatedRow.music_id_error = error;
-                } else if (field === 'title') {
-                    updatedRow.title_error = error;
-                }
+    //             // Validate the fields
+    //             const error = validateField(field, value);
+    //             if (field === 'music_id') {
+    //                 updatedRow.music_id_error = error;
+    //             } else if (field === 'title') {
+    //                 updatedRow.title_error = error;
+    //             }
 
-                return updatedRow;
-            }
-            return row;
-        }));
-    };
+    //             return updatedRow;
+    //         }
+    //         return row;
+    //     }));
+    // };
 
     if (initialLoading) {
         return (
