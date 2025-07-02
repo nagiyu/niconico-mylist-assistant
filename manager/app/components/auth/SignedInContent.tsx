@@ -92,7 +92,7 @@ export default function SignedInContent({ session }: { session: Session }) {
     };
 
     // 同期ボタン用の関数
-    const handleSync = async () => {
+    const syncMusic = async () => {
         setIsSyncing(true);
         try {
             await fetchMusic();
@@ -320,7 +320,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                         <Button variant="contained" color="success" sx={{ minWidth: 80 }} onClick={() => setSearchDialogOpen(true)}>Search</Button>
-                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
+                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={syncMusic} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
                             {isSyncing ? "同期中..." : "Sync"}
                         </Button>
                         <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
