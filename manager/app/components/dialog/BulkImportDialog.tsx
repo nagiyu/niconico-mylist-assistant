@@ -40,10 +40,10 @@ export default function BulkImportDialog({
     onClose,
     onImport,
 }: BulkImportDialogProps) {
-    const [rows, setRows] = useState<BulkImportRow[]>([{ id: 1, music_id: "", title: "" }]);
+    const [rows, setRows] = useState<BulkImportRow[]>([]);
     const [importing, setImporting] = useState(false);
     const [showImportAlert, setShowImportAlert] = useState(false);
-    const [nextId, setNextId] = useState(2);
+    const [nextId, setNextId] = useState(1);
     const [initialLoading, setInitialLoading] = useState(true);
 
     // Ensure there's always one empty row at the bottom for new input
