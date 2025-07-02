@@ -1,25 +1,35 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import styles from "../../page.module.css";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  CircularProgress,
+  TextField,
+  Box,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
+import styles from "../../page.module.css";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
 import AutoDialog from "@/app/components/dialog/AutoDialog";
 import BulkImportDialog from "@/app/components/dialog/BulkImportDialog";
 import SettingsDialog from "@/app/components/dialog/SettingsDialog";
+import SearchDialog from "@/app/components/dialog/SearchDialog";
 
 import { Session } from "next-auth";
 import { IMusic } from "@/app/interface/IMusic";
@@ -53,15 +63,23 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     const [autoDialogOpen, setAutoDialogOpen] = useState(false);
     const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
+    const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
     const [rows, setRows] = useState<IMusic[]>([]);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
+    // Search state
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchFavorite, setSearchFavorite] = useState<string>("");
+    const [searchSkip, setSearchSkip] = useState<string>("");
+
     // Notification manager hook
     const { subscription } = useNotificationManager();
 
     // APIからデータ取得する関数
+    const registeredMusicIds = rows.map(row => row.music_id);
+
     const fetchMusic = async () => {
         const res = await fetch("/api/music");
         if (res.status === 401) {
@@ -258,6 +276,28 @@ export default function SignedInContent({ session }: { session: Session }) {
         }
     };
 
+    // Filter rows based on search criteria
+    const filteredRows = rows.filter(row => {
+        // MusicID prefix match
+        const musicIdMatch = !searchTerm || row.music_id.toLowerCase().startsWith(searchTerm.toLowerCase());
+
+        // Title partial match
+        const titleMatch = !searchTerm || row.title.toLowerCase().includes(searchTerm.toLowerCase());
+
+        // Favorite filter
+        const favoriteMatch = !searchFavorite ||
+            (searchFavorite === "true" && row.favorite) ||
+            (searchFavorite === "false" && !row.favorite);
+
+        // Skip filter
+        const skipMatch = !searchSkip ||
+            (searchSkip === "true" && row.skip) ||
+            (searchSkip === "false" && !row.skip);
+
+        // Match if MusicID OR Title matches, AND favorite AND skip match
+        return (musicIdMatch || titleMatch) && favoriteMatch && skipMatch;
+    });
+
     return (
         <>
             <AppBar position="static" color="default" elevation={1}>
@@ -277,11 +317,106 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="primary" sx={{ minWidth: 80 }} onClick={handleAdd}>Add</Button>
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
+                        <Button variant="contained" color="success" sx={{ minWidth: 80 }} onClick={() => setSearchDialogOpen(true)}>Search</Button>
                         <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
                             {isSyncing ? "同期中..." : "Sync"}
                         </Button>
                         <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
                     </div>
+
+                    {/* Search filters */}
+                    <Box sx={{
+                        maxWidth: { xs: 'none', sm: 600 },
+                        margin: { xs: '16px 0', sm: '16px auto' },
+                        padding: { xs: '16px', sm: '24px' },
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 2,
+                        backgroundColor: '#fafafa'
+                    }}>
+                        <Stack spacing={2}>
+                            {/* Search term */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 2 }
+                            }}>
+                                <Typography variant="body2" sx={{ 
+                                    fontWeight: 500, 
+                                    minWidth: { xs: 'auto', sm: '140px' },
+                                    textAlign: { xs: 'left', sm: 'left' }
+                                }}>
+                                    検索 (ID/タイトル):
+                                </Typography>
+                                <TextField
+                                    size="small"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="ID または タイトルで検索"
+                                    fullWidth
+                                    variant="outlined"
+                                    sx={{ backgroundColor: "#fff" }}
+                                />
+                            </Box>
+                            
+                            {/* Favorite filter */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 2 }
+                            }}>
+                                <Typography variant="body2" sx={{ 
+                                    fontWeight: 500, 
+                                    minWidth: { xs: 'auto', sm: '140px' },
+                                    textAlign: { xs: 'left', sm: 'left' }
+                                }}>
+                                    お気に入り:
+                                </Typography>
+                                <FormControl size="small" fullWidth>
+                                    <Select
+                                        value={searchFavorite}
+                                        onChange={(e) => setSearchFavorite(e.target.value)}
+                                        displayEmpty
+                                        sx={{ backgroundColor: "#fff" }}
+                                    >
+                                        <MenuItem value="">すべて</MenuItem>
+                                        <MenuItem value="true">○</MenuItem>
+                                        <MenuItem value="false">×</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                            
+                            {/* Skip filter */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 2 }
+                            }}>
+                                <Typography variant="body2" sx={{ 
+                                    fontWeight: 500, 
+                                    minWidth: { xs: 'auto', sm: '140px' },
+                                    textAlign: { xs: 'left', sm: 'left' }
+                                }}>
+                                    スキップ:
+                                </Typography>
+                                <FormControl size="small" fullWidth>
+                                    <Select
+                                        value={searchSkip}
+                                        onChange={(e) => setSearchSkip(e.target.value)}
+                                        displayEmpty
+                                        sx={{ backgroundColor: "#fff" }}
+                                    >
+                                        <MenuItem value="">すべて</MenuItem>
+                                        <MenuItem value="true">○</MenuItem>
+                                        <MenuItem value="false">×</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                        </Stack>
+                    </Box>
+
                     <div className={styles.tableWrapper}>
                         <TableContainer component={Paper} sx={{
                             maxWidth: { xs: 'none', sm: 600 },
@@ -298,7 +433,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {rows.map((row) =>
+                                    {filteredRows.map((row) =>
                                         <TableRow key={row.music_id}>
                                             <TableCell>{row.music_id}</TableCell>
                                             <TableCell>{row.title}</TableCell>
@@ -390,6 +525,97 @@ export default function SignedInContent({ session }: { session: Session }) {
             <SettingsDialog
                 open={settingsDialogOpen}
                 onClose={() => setSettingsDialogOpen(false)}
+            />
+            <SearchDialog
+                open={searchDialogOpen}
+                onClose={() => setSearchDialogOpen(false)}
+                onAdd={async (data) => {
+                    // Create new music item for add action (don't close dialog)
+                    const newItem: IMusic = {
+                        music_common_id: "",
+                        user_music_setting_id: "",
+                        music_id: data.music_id,
+                        title: data.title,
+                        favorite: false,
+                        skip: false,
+                        memo: "",
+                    };
+
+                    try {
+                        const response = await fetch("/api/music", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                music_id: newItem.music_id,
+                                title: newItem.title,
+                                favorite: newItem.favorite,
+                                skip: newItem.skip,
+                                memo: newItem.memo,
+                            }),
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            const addedItem = {
+                                ...newItem,
+                                music_common_id: result.music_common_id,
+                                user_music_setting_id: result.user_music_setting_id,
+                            };
+                            updateLocalCache(addedItem, 'create');
+                            // Don't close dialog - allow multiple additions
+                        } else {
+                            const errorData = await response.json();
+                            alert("登録に失敗しました: " + JSON.stringify(errorData));
+                        }
+                    } catch (error) {
+                        console.error("Error adding music:", error);
+                        alert("登録中にエラーが発生しました");
+                    }
+                }}
+                onRegister={async (data) => {
+                    // Create new music item similar to handleAdd
+                    const newItem: IMusic = {
+                        music_common_id: "",
+                        user_music_setting_id: "",
+                        music_id: data.music_id,
+                        title: data.title,
+                        favorite: false,
+                        skip: false,
+                        memo: "",
+                    };
+
+                    try {
+                        const response = await fetch("/api/music", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                music_id: newItem.music_id,
+                                title: newItem.title,
+                                favorite: newItem.favorite,
+                                skip: newItem.skip,
+                                memo: newItem.memo,
+                            }),
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            const addedItem = {
+                                ...newItem,
+                                music_common_id: result.music_common_id,
+                                user_music_setting_id: result.user_music_setting_id,
+                            };
+                            updateLocalCache(addedItem, 'create');
+                            setSearchDialogOpen(false);
+                        } else {
+                            const errorData = await response.json();
+                            alert("登録に失敗しました: " + JSON.stringify(errorData));
+                        }
+                    } catch (error) {
+                        console.error("Error adding music:", error);
+                        alert("登録中にエラーが発生しました");
+                    }
+                }}
+                registeredMusicIds={registeredMusicIds}
             />
         </>
     );

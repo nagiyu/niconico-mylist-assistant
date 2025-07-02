@@ -1,16 +1,20 @@
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormGroup from "@mui/material/FormGroup";
-import CircularProgress from "@mui/material/CircularProgress";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  CircularProgress,
+} from "@mui/material";
 import { useState, useEffect } from "react";
 
 import { EditData } from "@/app/types/EditData";
+import { ValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
+import { useVideoInfo } from "@/hooks/useVideoInfo";
 
 interface EditDialogProps {
     open: boolean;
@@ -18,11 +22,6 @@ interface EditDialogProps {
     setEditData: React.Dispatch<React.SetStateAction<EditData>>;
     onClose: () => void;
     onSave: () => void;
-}
-
-interface ValidationErrors {
-    music_id: string;
-    title: string;
 }
 
 export default function EditDialog({
@@ -36,17 +35,12 @@ export default function EditDialog({
         music_id: "",
         title: "",
     });
-    const [isLoadingInfo, setIsLoadingInfo] = useState(false);
-    const [infoError, setInfoError] = useState<string>("");
+    const { isLoading: isLoadingInfo, error: infoError, fetchVideoInfo } = useVideoInfo();
 
-    // Validation function
-    const validateField = (field: string, value: string): string => {
-        if (field === "music_id" || field === "title") {
-            if (!value || value.trim() === "") {
-                return `${field === "music_id" ? "ID" : "タイトル"}は必須です`;
-            }
-        }
-        return "";
+    // Real-time validation on field change
+    const handleFieldChange = (field: keyof ValidationErrors, value: string) => {
+        const error = validateField(field, value);
+        setErrors(prev => ({ ...prev, [field]: error }));
     };
 
     // Validate all fields
@@ -56,54 +50,26 @@ export default function EditDialog({
             title: validateField("title", editData?.title ?? ""),
         };
         setErrors(newErrors);
-        return !newErrors.music_id && !newErrors.title;
-    };
-
-    // Real-time validation on field change
-    const handleFieldChange = (field: keyof ValidationErrors, value: string) => {
-        const error = validateField(field, value);
-        setErrors(prev => ({ ...prev, [field]: error }));
+        return !hasValidationErrors(newErrors);
     };
 
     // Reset errors when dialog opens/closes
     useEffect(() => {
         if (open) {
             setErrors({ music_id: "", title: "" });
-            setInfoError("");
         }
     }, [open]);
 
     // Fetch video info from Niconico API
     const handleGetInfo = async () => {
         const musicId = editData?.music_id?.trim();
-        if (!musicId) {
-            setInfoError("IDを入力してください");
-            return;
-        }
+        if (!musicId) return;
 
-        setIsLoadingInfo(true);
-        setInfoError("");
-
-        try {
-            const response = await fetch(`/api/music/info?video_id=${encodeURIComponent(musicId)}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to fetch video info");
-            }
-
-            if (data.status === "success" && data.title) {
-                setEditData(prev => prev ? { ...prev, title: data.title } : prev);
-                // Clear title validation error if title was successfully fetched
-                setErrors(prev => ({ ...prev, title: "" }));
-            } else {
-                setInfoError(data.message || "情報の取得に失敗しました");
-            }
-        } catch (error) {
-            console.error("Error fetching video info:", error);
-            setInfoError("情報の取得中にエラーが発生しました");
-        } finally {
-            setIsLoadingInfo(false);
+        const title = await fetchVideoInfo(musicId);
+        if (title) {
+            setEditData(prev => prev ? { ...prev, title } : prev);
+            // Clear title validation error if title was successfully fetched
+            setErrors(prev => ({ ...prev, title: "" }));
         }
     };
 

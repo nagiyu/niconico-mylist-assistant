@@ -1,21 +1,24 @@
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-import CircularProgress from "@mui/material/CircularProgress";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Typography,
+  Snackbar,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import { useState, useEffect } from "react";
+import { validateField } from "@/app/utils/validation";
 
 interface BulkImportRow {
     id: number;
@@ -96,8 +99,9 @@ export default function BulkImportDialog({
                 
                 // Validate the fields
                 if (field === 'music_id') {
-                    if (value.trim() === '' && row.title.trim() !== '') {
-                        updatedRow.music_id_error = 'IDは必須です';
+                    const error = validateField("music_id", value);
+                    if (error && row.title.trim() !== '') {
+                        updatedRow.music_id_error = error;
                     } else {
                         delete updatedRow.music_id_error;
                     }
@@ -110,8 +114,9 @@ export default function BulkImportDialog({
                         }, 100);
                     }
                 } else if (field === 'title') {
-                    if (value.trim() === '' && row.music_id.trim() !== '') {
-                        updatedRow.title_error = 'タイトルは必須です';
+                    const error = validateField("title", value); 
+                    if (error && row.music_id.trim() !== '') {
+                        updatedRow.title_error = error;
                     } else {
                         delete updatedRow.title_error;
                     }
@@ -126,10 +131,10 @@ export default function BulkImportDialog({
                 if (field === 'music_id' && value.trim() !== '' && row.title.trim() === '') {
                     // Don't set title error if we're about to auto-fetch
                     if (!row.isLoadingTitle) {
-                        updatedRow.title_error = 'タイトルは必須です';
+                        updatedRow.title_error = validateField("title", "");
                     }
                 } else if (field === 'title' && value.trim() !== '' && row.music_id.trim() === '') {
-                    updatedRow.music_id_error = 'IDは必須です';
+                    updatedRow.music_id_error = validateField("music_id", "");
                 }
                 
                 // Clear errors if both fields are empty (valid empty row)
@@ -188,15 +193,18 @@ export default function BulkImportDialog({
             }
             
             // Validate non-empty rows
-            if (row.music_id.trim() === '') {
-                updatedRow.music_id_error = 'IDは必須です';
+            const musicIdError = validateField("music_id", row.music_id);
+            const titleError = validateField("title", row.title);
+            
+            if (musicIdError) {
+                updatedRow.music_id_error = musicIdError;
                 hasErrors = true;
             } else {
                 delete updatedRow.music_id_error;
             }
             
-            if (row.title.trim() === '') {
-                updatedRow.title_error = 'タイトルは必須です';
+            if (titleError) {
+                updatedRow.title_error = titleError;
                 hasErrors = true;
             } else {
                 delete updatedRow.title_error;
