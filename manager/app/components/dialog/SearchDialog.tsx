@@ -4,8 +4,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-import ClearIcon from '@mui/icons-material/Clear';
-import IconButton from '@mui/material/IconButton';
   Button,
   CircularProgress,
   Box,
