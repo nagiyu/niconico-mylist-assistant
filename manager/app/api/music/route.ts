@@ -1,26 +1,25 @@
 // DynamoDB との連携用 API Route（雛形）
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
 import { IMusic } from "@/app/interface/IMusic";
 import { IMusicCommon, IUserMusicSetting } from "@/app/interface/IDynamoMusic";
 import { PutItemCommand, GetItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { getGoogleUserIdFromSession } from "@shared/auth";
-import { getDynamoClient } from "@shared/aws";
+import { getAuthenticatedApiContext, getAwsContext, getCurrentTimestamp } from "@/app/api/utils/common";
 
 export async function GET(req: NextRequest) {
   // セッションからUserID取得
-  const userId = await getGoogleUserIdFromSession();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { error, userId } = await getAuthenticatedApiContext();
+  if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   // DynamoDBから全件取得
-  const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
   // GSIを利用して全件取得（DataTypeで絞り込みたい場合はGSIを利用）
   // ここでは全件取得のままですが、必要に応じてQuery+GSIを推奨
-  const client = getDynamoClient();
-  const scanCommand = new ScanCommand({ TableName });
+  const scanCommand = new ScanCommand({ TableName: tableName });
   const result = await client.send(scanCommand);
 
   // データを分離
@@ -72,23 +71,20 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data);
 }
 
-import { randomUUID } from "crypto";
-
 export async function POST(req: NextRequest) {
   // 新規作成
-  const userId = await getGoogleUserIdFromSession();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const body: IMusic = await req.json();
-  const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
-  const now = new Date().toISOString();
+  const { error, userId } = await getAuthenticatedApiContext();
+  if (error) return error;
 
-  const client = getDynamoClient();
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
+
+  const body: IMusic = await req.json();
+  const now = getCurrentTimestamp();
   
   // 音楽共通情報が既に存在するかチェック
   const musicCheckCommand = new ScanCommand({
-    TableName,
+    TableName: tableName,
     FilterExpression: "DataType = :datatype AND MusicID = :musicid",
     ExpressionAttributeValues: {
       ":datatype": { S: "music" },
@@ -117,7 +113,7 @@ export async function POST(req: NextRequest) {
     MusicID: { S: body.music_id },
     Title: { S: body.title },
   };
-  await client.send(new PutItemCommand({ TableName, Item: musicItem }));
+  await client.send(new PutItemCommand({ TableName: tableName, Item: musicItem }));
 
   // ユーザー個人設定（DataType: "user"）
   const userItem = {
@@ -133,7 +129,7 @@ export async function POST(req: NextRequest) {
     memo: { S: body.memo ?? "" },
   };
 
-  await client.send(new PutItemCommand({ TableName, Item: userItem }));
+  await client.send(new PutItemCommand({ TableName: tableName, Item: userItem }));
 
   // 生成したUUIDも返却
   return NextResponse.json({ ok: true, music_common_id, user_music_setting_id });
@@ -141,19 +137,19 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   // 更新
-  const userId = await getGoogleUserIdFromSession();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { error, userId } = await getAuthenticatedApiContext();
+  if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
+
   const body: IMusic = await req.json();
-  const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
-  const now = new Date().toISOString();
+  const now = getCurrentTimestamp();
 
   // 音楽共通情報（titleのみ更新想定）
-  const client = getDynamoClient();
   await client.send(
     new UpdateItemCommand({
-      TableName,
+      TableName: tableName,
       Key: { ID: { S: body.music_common_id }, DataType: { S: "music" } },
       UpdateExpression: "SET #musicid = :musicid, #title = :title, #update = :update",
       ExpressionAttributeNames: {
@@ -175,7 +171,7 @@ export async function PUT(req: NextRequest) {
     const user_music_setting_id = randomUUID();
     await client.send(
       new PutItemCommand({
-        TableName,
+        TableName: tableName,
         Item: {
           ID: { S: user_music_setting_id },
           DataType: { S: "user" },
@@ -194,7 +190,7 @@ export async function PUT(req: NextRequest) {
     // user_music_setting_idがあれば更新
     await client.send(
       new UpdateItemCommand({
-        TableName,
+        TableName: tableName,
         Key: { ID: { S: body.user_music_setting_id }, DataType: { S: "user" } },
         UpdateExpression: "SET #musicid = :musicid, #favorite = :favorite, #skip = :skip, #memo = :memo, #update = :update, #userid = :userid",
         ExpressionAttributeNames: {
@@ -222,18 +218,18 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   // 削除
-  const userId = await getGoogleUserIdFromSession();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { error, userId } = await getAuthenticatedApiContext();
+  if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
+
   const body: { music_common_id: string; user_music_setting_id: string } = await req.json();
-  const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
 
   // 音楽共通情報削除
-  const client = getDynamoClient();
   await client.send(
     new DeleteItemCommand({
-      TableName,
+      TableName: tableName,
       Key: { ID: { S: body.music_common_id }, DataType: { S: "music" } },
     })
   );
@@ -241,7 +237,7 @@ export async function DELETE(req: NextRequest) {
   // ユーザー個人設定削除
   await client.send(
     new DeleteItemCommand({
-      TableName,
+      TableName: tableName,
       Key: { ID: { S: body.user_music_setting_id }, DataType: { S: "user" } },
     })
   );

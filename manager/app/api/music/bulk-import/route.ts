@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { getGoogleUserIdFromSession } from "@shared/auth";
-import { getDynamoClient } from "@shared/aws";
 import { randomUUID } from "crypto";
+import { getAuthenticatedApiContext, getAwsContext, getCurrentTimestamp } from "@/app/api/utils/common";
 
 interface BulkImportItem {
   music_id: string;
@@ -31,19 +30,18 @@ interface BulkImportResponse {
 
 export async function POST(req: NextRequest) {
   // Bulk import for music items only (DataType: "music")
-  const userId = await getGoogleUserIdFromSession();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { error, userId } = await getAuthenticatedApiContext();
+  if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   const body: BulkImportRequest = await req.json();
-  const TableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
-  const now = new Date().toISOString();
-  const client = getDynamoClient();
+  const now = getCurrentTimestamp();
 
   // Get existing music items to avoid duplicates
   const scanCommand = new ScanCommand({ 
-    TableName,
+    TableName: tableName,
     FilterExpression: "DataType = :dataType",
     ExpressionAttributeValues: {
       ":dataType": { S: "music" }
@@ -88,7 +86,7 @@ export async function POST(req: NextRequest) {
         Title: { S: item.title },
       };
 
-      await client.send(new PutItemCommand({ TableName, Item: musicItem }));
+      await client.send(new PutItemCommand({ TableName: tableName, Item: musicItem }));
       
       result.success++;
       result.details.success.push(item.music_id);
