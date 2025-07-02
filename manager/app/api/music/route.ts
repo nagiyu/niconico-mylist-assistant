@@ -6,12 +6,15 @@ import { randomUUID } from "crypto";
 import { IMusic } from "@/app/interface/IMusic";
 import { IMusicCommon, IUserMusicSetting } from "@/app/interface/IDynamoMusic";
 import { PutItemCommand, GetItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { getAuthenticatedApiContext, getCurrentTimestamp } from "@/app/api/utils/common";
+import { getAuthenticatedApiContext, getAwsContext, getCurrentTimestamp } from "@/app/api/utils/common";
 
 export async function GET(req: NextRequest) {
   // セッションからUserID取得
-  const { error, userId, client, tableName } = await getAuthenticatedApiContext();
+  const { error, userId } = await getAuthenticatedApiContext();
   if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   // DynamoDBから全件取得
   // GSIを利用して全件取得（DataTypeで絞り込みたい場合はGSIを利用）
@@ -70,8 +73,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   // 新規作成
-  const { error, userId, client, tableName } = await getAuthenticatedApiContext();
+  const { error, userId } = await getAuthenticatedApiContext();
   if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   const body: IMusic = await req.json();
   const now = getCurrentTimestamp();
@@ -131,8 +137,11 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   // 更新
-  const { error, userId, client, tableName } = await getAuthenticatedApiContext();
+  const { error, userId } = await getAuthenticatedApiContext();
   if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   const body: IMusic = await req.json();
   const now = getCurrentTimestamp();
@@ -209,8 +218,11 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   // 削除
-  const { error, userId, client, tableName } = await getAuthenticatedApiContext();
+  const { error, userId } = await getAuthenticatedApiContext();
   if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   const body: { music_common_id: string; user_music_setting_id: string } = await req.json();
 

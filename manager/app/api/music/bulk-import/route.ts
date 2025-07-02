@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
 import { randomUUID } from "crypto";
-import { getAuthenticatedApiContext, getCurrentTimestamp } from "@/app/api/utils/common";
+import { getAuthenticatedApiContext, getAwsContext, getCurrentTimestamp } from "@/app/api/utils/common";
 
 interface BulkImportItem {
   music_id: string;
@@ -30,8 +30,11 @@ interface BulkImportResponse {
 
 export async function POST(req: NextRequest) {
   // Bulk import for music items only (DataType: "music")
-  const { error, userId, client, tableName } = await getAuthenticatedApiContext();
+  const { error, userId } = await getAuthenticatedApiContext();
   if (error) return error;
+
+  // AWS情報取得
+  const { client, tableName } = getAwsContext();
 
   const body: BulkImportRequest = await req.json();
   const now = getCurrentTimestamp();

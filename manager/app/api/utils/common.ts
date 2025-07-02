@@ -3,7 +3,7 @@ import { getGoogleUserIdFromSession } from "@shared/auth";
 import { getDynamoClient } from "@shared/aws";
 
 /**
- * Common API authentication and setup utility
+ * API authentication utility
  */
 export async function getAuthenticatedApiContext() {
   const userId = await getGoogleUserIdFromSession();
@@ -11,17 +11,23 @@ export async function getAuthenticatedApiContext() {
     return {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
       userId: null,
-      client: null,
-      tableName: null,
     };
   }
-
-  const client = getDynamoClient();
-  const tableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
 
   return {
     error: null,
     userId,
+  };
+}
+
+/**
+ * AWS DynamoDB context utility
+ */
+export function getAwsContext() {
+  const client = getDynamoClient();
+  const tableName = process.env.DYNAMO_TABLE_NAME || "NiconicoMylistAssistant";
+
+  return {
     client,
     tableName,
   };
