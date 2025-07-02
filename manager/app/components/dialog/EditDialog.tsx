@@ -1,13 +1,15 @@
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormGroup from "@mui/material/FormGroup";
-import CircularProgress from "@mui/material/CircularProgress";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  CircularProgress,
+} from "@mui/material";
 import { useState, useEffect } from "react";
 
 import { EditData } from "@/app/types/EditData";
