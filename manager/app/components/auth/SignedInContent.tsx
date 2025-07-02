@@ -123,7 +123,9 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     // 初回マウント時に API から取得
     useEffect(() => {
-        fetchMusic();
+        if (!isSyncing) {
+            fetchMusic();
+        }
     }, [session.tokens]);
 
     const handleAdd = () => {
