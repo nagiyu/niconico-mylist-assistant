@@ -269,7 +269,7 @@ export default function SearchDialog({
             <DialogContent>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
-                        ニコニコ動画で動画を検索し、結果から選択するかURLまたはMusicIDを直接入力して登録できます
+                        ニコニコ動画で動画を検索し、結果から選択して登録できます
                     </Typography>
 
                     {/* Search section */}
@@ -338,63 +338,6 @@ export default function SearchDialog({
                     )}
                 </Box>
 
-                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                    <TextField
-                        label="URL または MusicID"
-                        value={url}
-                        onChange={e => handleUrlChange(e.target.value)}
-                        fullWidth
-                        size="small"
-                        placeholder="例: https://www.nicovideo.jp/watch/sm12345678 または sm12345678"
-                        helperText="URLまたはMusicIDを入力すると自動的に抽出されます"
-                    />
-                    <Button
-                        variant="outlined"
-                        onClick={handleExtractMusicId}
-                        disabled={!url.trim()}
-                        sx={{ minWidth: 100 }}
-                    >
-                        取得
-                    </Button>
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                    <TextField
-                        label="Music ID"
-                        value={musicId}
-                        disabled
-                        fullWidth
-                        size="small"
-                        error={!!errors.music_id}
-                        helperText={errors.music_id || "検索結果から選択またはURLから自動的に抽出されます"}
-                    />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                    <TextField
-                        label="タイトル"
-                        value={title}
-                        onChange={e => {
-                            const value = e.target.value;
-                            setTitle(value);
-                            handleFieldChange("title", value);
-                        }}
-                        fullWidth
-                        size="small"
-                        error={!!errors.title}
-                        helperText={errors.title || "検索結果から選択、Infoボタンで自動取得、または手動で編集可能です"}
-                    />
-                    <Button
-                        variant="outlined"
-                        onClick={handleGetInfo}
-                        disabled={isLoadingInfo || !musicId.trim()}
-                        startIcon={isLoadingInfo ? <CircularProgress size={16} /> : null}
-                        sx={{ minWidth: 100 }}
-                    >
-                        {isLoadingInfo ? "取得中..." : "Info"}
-                    </Button>
-                </Box>
-
                 {infoError && (
                     <Box sx={{ color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
                         {infoError}
@@ -403,13 +346,6 @@ export default function SearchDialog({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>キャンセル</Button>
-                <Button
-                    variant="contained"
-                    onClick={handleRegister}
-                    disabled={!!errors.music_id || !!errors.title || !musicId.trim() || !title.trim()}
-                >
-                    登録
-                </Button>
             </DialogActions>
         </Dialog>
     );
