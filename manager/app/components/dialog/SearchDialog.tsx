@@ -12,7 +12,9 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  IconButton,
 } from "@mui/material";
+import ClearIcon from '@mui/icons-material/Clear';
 import { useState, useEffect } from "react";
 import styles from "./SearchDialog.module.css";
 import { ValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
@@ -233,6 +235,18 @@ export default function SearchDialog({
                             size="small"
                             placeholder="例: ボーカロイド、楽曲名など"
                             onKeyPress={e => e.key === 'Enter' && handleSearch()}
+                            InputProps={{
+                                endAdornment: searchKeyword ? (
+                                    <IconButton
+                                        aria-label="clear search"
+                                        onClick={() => setSearchKeyword('')}
+                                        edge="end"
+                                        size="small"
+                                    >
+                                        <ClearIcon />
+                                    </IconButton>
+                                ) : null,
+                            }}
                         />
                         <Button
                             variant="contained"
