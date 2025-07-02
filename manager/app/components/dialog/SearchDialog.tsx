@@ -3,11 +3,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Button,
   CircularProgress,
@@ -20,15 +15,6 @@ import {
   IconButton,
 } from "@mui/material";
 import ClearIcon from '@mui/icons-material/Clear';
-  Button,
-  CircularProgress,
-  Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-} from "@mui/material";
 import { useState, useEffect } from "react";
 import styles from "./SearchDialog.module.css";
 import { ValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
