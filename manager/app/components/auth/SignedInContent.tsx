@@ -22,6 +22,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Pagination,
 } from "@mui/material";
 import styles from "../../page.module.css";
 import EditDialog from "@/app/components/dialog/EditDialog";
@@ -73,6 +74,10 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchFavorite, setSearchFavorite] = useState<string>("");
     const [searchSkip, setSearchSkip] = useState<string>("");
+
+    // Pagination state
+    const [page, setPage] = useState(1);
+    const rowsPerPage = 20;
 
     // Notification manager hook
     const { subscription } = useNotificationManager();
@@ -300,6 +305,14 @@ export default function SignedInContent({ session }: { session: Session }) {
         return (musicIdMatch || titleMatch) && favoriteMatch && skipMatch;
     });
 
+    // Pagination logic
+    const pageCount = Math.ceil(filteredRows.length / rowsPerPage);
+    const paginatedRows = filteredRows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+
     return (
         <>
             <AppBar position="static" color="default" elevation={1}>
@@ -435,7 +448,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredRows.map((row) =>
+                                    {paginatedRows.map((row) =>
                                         <TableRow key={row.music_id}>
                                             <TableCell>{row.music_id}</TableCell>
                                             <TableCell>{row.title}</TableCell>
@@ -468,6 +481,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                             </Table>
                         </TableContainer>
                     </div>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+                        <Pagination count={pageCount} page={page} onChange={handlePageChange} color="primary" />
+                    </Box>
                 </>
             </main>
 
