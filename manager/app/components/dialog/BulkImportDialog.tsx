@@ -40,11 +40,10 @@ export default function BulkImportDialog({
     onClose,
     onImport,
 }: BulkImportDialogProps) {
-    const [rows, setRows] = useState<BulkImportRow[]>([]);
+    const [rows, setRows] = useState<BulkImportRow[]>([{ id: 1, music_id: "", title: "" }]);
     const [importing, setImporting] = useState(false);
     const [showImportAlert, setShowImportAlert] = useState(false);
-    const [nextId, setNextId] = useState(1);
-    const [initialLoading, setInitialLoading] = useState(true);
+    const [nextId, setNextId] = useState(2);
 
     // Ensure there's always one empty row at the bottom for new input
     useEffect(() => {
@@ -92,41 +91,6 @@ export default function BulkImportDialog({
             ));
         }
     };
-
-    // Fetch all data from DynamoDB on initial load
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch('/api/dynamodb/all');
-                const data = await response.json();
-                if (response.ok && Array.isArray(data)) {
-                    setRows(data.map((item: any, index: number) => ({
-                        id: index + 1,
-                        music_id: item.music_id || "",
-                        title: item.title || "",
-                        isLoadingTitle: false
-                    })));
-                    setNextId(data.length + 1);
-                }
-            } catch (error) {
-                console.error('Failed to fetch initial data:', error);
-            } finally {
-                setInitialLoading(false);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    if (initialLoading) {
-        return (
-            <Dialog open={open} fullWidth maxWidth="md">
-                <DialogContent style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                    <CircularProgress />
-                </DialogContent>
-            </Dialog>
-        );
-    }
 
     const updateRow = (id: number, field: keyof Omit<BulkImportRow, 'id' | 'music_id_error' | 'title_error' | 'isLoadingTitle'>, value: string) => {
         setRows(prev => prev.map(row => {
