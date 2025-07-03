@@ -3,7 +3,22 @@ import webpush from "web-push";
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, subscription } = await req.json();
+    // Ensure the request method is POST
+    if (req.method !== "POST") {
+      return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+    }
+
+    let body;
+    try {
+      body = await req.json();
+    } catch (err: any) {
+      if (err.message.includes("Body has already been read")) {
+        return NextResponse.json({ error: "Request body has already been read" }, { status: 400 });
+      }
+      throw err;
+    }
+
+    const { message, subscription } = body;
 
     if (!subscription) {
       return NextResponse.json({ error: "No subscription provided" }, { status: 400 });
