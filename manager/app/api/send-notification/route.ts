@@ -3,6 +3,7 @@ import webpush from "web-push";
 
 export async function POST(req: NextRequest) {
   try {
+    const { subscription, message } = await req.json();
     if (!subscription) {
       return NextResponse.json({ error: "No subscription provided" }, { status: 400 });
     }
@@ -36,3 +37,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
