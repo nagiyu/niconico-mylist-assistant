@@ -227,6 +227,59 @@ export default function SearchDialog({
 
                     {/* Search section */}
                     <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                                                       <TextField
+                                                               label="ID"
+                                                               value={musicId}
+                                                               onChange={e => {
+                                                                       setMusicId(e.target.value);
+                                                                       handleFieldChange("music_id", e.target.value);
+                                                               }}
+                                                               fullWidth
+                                                               size="small"
+                                                               placeholder="例: sm12345678"
+                                                               InputProps={{
+                                                                       endAdornment: musicId ? (
+                                                                               <IconButton
+                                                                                       aria-label="clear id"
+                                                                                       onClick={() => {
+                                                                                               setMusicId("");
+                                                                                               handleFieldChange("music_id", "");
+                                                                                       }}
+                                                                                       edge="end"
+                                                                                       size="small"
+                                                                               >
+                                                                                               <ClearIcon />
+                                                                                       </IconButton>
+                                                                               ) : null,
+                                                               }} />
+
+                                                       <TextField
+                                                               label="タイトル"
+                                                               value={title}
+                                                               onChange={e => {
+                                                                       setTitle(e.target.value);
+                                                                       handleFieldChange("title", e.target.value);
+                                                               }}
+                                                               fullWidth
+                                                               size="small"
+                                                               placeholder="例: 初音ミクの歌"
+                                                               InputProps={{
+                                                                       endAdornment: title ? (
+                                                                               <IconButton
+                                                                                       aria-label="clear title"
+                                                                                       onClick={() => {
+                                                                                               setTitle("");
+                                                                                               handleFieldChange("title", "");
+                                                                                       }}
+                                                                                       edge="end"
+                                                                                       size="small"
+                                                                               >
+                                                                                               <ClearIcon />
+                                                                                       </IconButton>
+                                                                               ) : null,
+                                                               }} />
+
+
                         <TextField
                             label="検索キーワード"
                             value={searchKeyword}
