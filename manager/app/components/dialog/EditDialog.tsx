@@ -28,7 +28,22 @@ export default function EditDialog({
 
     // Real-time validation on field change
 
+    // Validate all fields
+    const validateForm = (): boolean => {
+        const newErrors: ValidationErrors = {
+            music_id: validateField("music_id", editData?.music_id ?? ""),
+            title: validateField("title", editData?.title ?? ""),
+        };
+        setErrors(newErrors);
+        return !hasValidationErrors(newErrors);
+    };
+
+    // Reset errors when dialog opens/closes
+    useEffect(() => {
+        if (open) {
+            setErrors({ music_id: "", title: "" });
         }
+    }, [open]);
 
     return (
         <DialogBase

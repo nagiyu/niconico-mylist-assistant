@@ -35,6 +35,4 @@ export default function DeleteDialog({
         </DialogBase>
     );
 }
-    </Dialog>
-    );
-}
+
