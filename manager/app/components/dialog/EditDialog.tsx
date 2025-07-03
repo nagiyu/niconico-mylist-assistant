@@ -1,15 +1,4 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  CircularProgress,
-} from "@mui/material";
+import DialogBase from "./DialogBase";
 import { useState, useEffect } from "react";
 
 import { EditData } from "@/app/types/EditData";
@@ -38,20 +27,59 @@ export default function EditDialog({
     const { isLoading: isLoadingInfo, error: infoError, fetchVideoInfo } = useVideoInfo();
 
     // Real-time validation on field change
-    const handleFieldChange = (field: keyof ValidationErrors, value: string) => {
-        const error = validateField(field, value);
-        setErrors(prev => ({ ...prev, [field]: error }));
-    };
+
+        }
+
+    return (
+        <DialogBase
+            open={open}
+            title="編集"
+            onClose={onClose}
+            onConfirm={() => {
+                if (!hasValidationErrors(errors)) {
+                    onSave();
+                }
+            }}
+            confirmText="保存"
+            confirmColor="primary"
+        >
+            <TextField
+                margin="dense"
+                label="Music ID"
+                fullWidth
+                required
+                value={editData.music_id}
+                onChange={(e) => {
+                    setEditData({ ...editData, music_id: e.target.value });
+                    handleFieldChange("music_id", e.target.value);
+                }}
+                error={!!errors.music_id}
+                helperText={errors.music_id}
+            />
+            <TextField
+                margin="dense"
+                label="Title"
+                fullWidth
+                required
+                value={editData.title}
+                onChange={(e) => {
+                    setEditData({ ...editData, title: e.target.value });
+                    handleFieldChange("title", e.target.value);
+                }}
+                error={!!errors.title}
+                helperText={errors.title}
+            />
+        </DialogBase>
+    );
+
 
     // Validate all fields
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {
             music_id: validateField("music_id", editData?.music_id ?? ""),
             title: validateField("title", editData?.title ?? ""),
-        };
         setErrors(newErrors);
         return !hasValidationErrors(newErrors);
-    };
 
     // Reset errors when dialog opens/closes
     useEffect(() => {
@@ -71,13 +99,8 @@ export default function EditDialog({
             // Clear title validation error if title was successfully fetched
             setErrors(prev => ({ ...prev, title: "" }));
         }
-    };
 
-    const handleSave = () => {
-        if (validateForm()) {
-            onSave();
         }
-    };
     return (
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>{!!editData?.user_music_setting_id ? "編集" : "追加"}</DialogTitle>
