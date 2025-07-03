@@ -85,9 +85,7 @@ def process_regist(email, password, id_list, title: str = None):
     driver = selenium_helper.create_chrome_driver()
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
-    if title:
-        # If title is provided, create mylist with title
-        create_mylist(driver, title)
+
     failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
     return failed_id_list
