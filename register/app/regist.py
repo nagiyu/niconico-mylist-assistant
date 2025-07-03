@@ -44,14 +44,15 @@ def remove_all_mylist(driver):
         time.sleep(1)
         driver.get(MYLIST_URL)
 
-def create_mylist(driver):
+def create_mylist(driver, title: str = None):
     selenium_helper.wait_and_click(driver, MYLIST_CREATE_BUTTON_XPATH)
-    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    mylist_name = f"MyList_{current_time}"
-    selenium_helper.wait_and_send_keys(driver, MYLIST_TITLE_INPUT_XPATH, mylist_name)
+    if title is None or title == "":
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        title = f"MyList_{current_time}"
+    selenium_helper.wait_and_send_keys(driver, MYLIST_TITLE_INPUT_XPATH, title)
     selenium_helper.wait_and_click(driver, MYLIST_CREATE_CONFIRM_XPATH)
     time.sleep(1)
-    return mylist_name
+    return title
 
 def add_videos_to_mylist(driver, id_list):
     failed_id_list = []
@@ -80,21 +81,24 @@ def distribute_id_list(id_list, n):
     return chunks
 
 
-def process_regist(email, password, id_list):
+def process_regist(email, password, id_list, title: str = None):
     driver = selenium_helper.create_chrome_driver()
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
+    if title:
+        # If title is provided, create mylist with title
+        create_mylist(driver, title)
     failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
     return failed_id_list
 
 
-def regist(email, password, id_list):
+def regist(email, password, id_list, title: str = None):
     driver = selenium_helper.create_chrome_driver()
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     remove_all_mylist(driver)
-    create_mylist(driver)
+    create_mylist(driver, title)
     driver.quit()
 
     threads = min(MAX_THREADS, len(id_list))

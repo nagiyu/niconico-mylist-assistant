@@ -88,7 +88,8 @@ def lambda_handler(event, context):
         }
 
     # 登録処理実行
-    failed_id_list = regist.regist(email, password, id_list)
+    title = event.get("title", "")
+    failed_id_list = regist.regist(email, password, id_list, title)
     
     # プッシュ通知の送信
     if subscription_json:

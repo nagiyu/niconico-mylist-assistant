@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
                 password: encrypted_password,
                 id_list,
                 subscription: subscription ? JSON.stringify(subscription) : null,
+                title: (await req.json()).title || "",
             }),
         }).catch((error) => {
             console.error("Lambda invocation failed:", error);
