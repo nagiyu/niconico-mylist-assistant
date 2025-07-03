@@ -14,6 +14,7 @@ interface DialogBaseProps {
   onConfirm?: () => void;
   confirmText?: string;
   confirmColor?: "primary" | "secondary" | "error" | "info" | "success" | "warning";
+  disabled?: boolean;
   children: React.ReactNode;
 }
 
@@ -24,6 +25,7 @@ export default function DialogBase({
   onConfirm,
   confirmText = "OK",
   confirmColor = "primary",
+  disabled = false,
   children,
 }: DialogBaseProps) {
   return (
@@ -33,7 +35,7 @@ export default function DialogBase({
       <DialogActions>
         <Button onClick={onClose}>キャンセル</Button>
         {onConfirm && (
-          <Button variant="contained" color={confirmColor} onClick={onConfirm}>
+          <Button variant="contained" color={confirmColor} onClick={onConfirm} disabled={disabled}>
             {confirmText}
           </Button>
         )}
