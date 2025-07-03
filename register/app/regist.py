@@ -86,9 +86,17 @@ def process_regist(email, password, id_list, title: str = None):
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
 
+    if title:
+        # Select the created mylist by title
+        driver.get(MYLIST_URL)
+        mylist_elements = driver.find_elements("xpath", f"//li//span[text()='{title}']")
+        if mylist_elements:
+            mylist_elements[0].click()
+
     failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
     return failed_id_list
+
 
 
 def regist(email, password, id_list, title: str = None):
@@ -96,7 +104,7 @@ def regist(email, password, id_list, title: str = None):
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     remove_all_mylist(driver)
-    create_mylist(driver, title)
+    created_title = create_mylist(driver, title)
     driver.quit()
 
     threads = min(MAX_THREADS, len(id_list))
@@ -106,7 +114,7 @@ def regist(email, password, id_list, title: str = None):
         # Submit all tasks first, then collect results
         futures = []
         for chunk in id_chunks:
-            future = executor.submit(process_regist, email, password, chunk)
+            future = executor.submit(process_regist, email, password, chunk, created_title)
             futures.append(future)
         
         # Collect results from all futures
@@ -122,3 +130,4 @@ def regist(email, password, id_list, title: str = None):
             failed_id_list.append(video_id)
 
     return failed_id_list
+
