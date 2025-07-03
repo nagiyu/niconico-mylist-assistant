@@ -85,14 +85,6 @@ def process_regist(email, password, id_list, title: str = None):
     driver = selenium_helper.create_chrome_driver()
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
-
-    if title:
-        # Select the created mylist by title
-        driver.get(MYLIST_URL)
-        mylist_elements = driver.find_elements("xpath", f"//li//span[text()='{title}']")
-        if mylist_elements:
-            mylist_elements[0].click()
-
     failed_id_list = add_videos_to_mylist(driver, id_list)
     driver.quit()
     return failed_id_list
@@ -114,7 +106,7 @@ def regist(email, password, id_list, title: str = None):
         # Submit all tasks first, then collect results
         futures = []
         for chunk in id_chunks:
-            future = executor.submit(process_regist, email, password, chunk, created_title)
+            future = executor.submit(process_regist, email, password, created_title, chunk)
             futures.append(future)
         
         # Collect results from all futures
