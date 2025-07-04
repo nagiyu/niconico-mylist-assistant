@@ -58,64 +58,6 @@ export default function EditDialog({
         setErrors(newErrors);
     };
 
-    return (
-        <DialogBase
-            open={open}
-            title="編集"
-            onClose={onClose}
-            onConfirm={() => {
-                if (!hasValidationErrors(errors)) {
-                    onSave();
-                }
-            }}
-            confirmText="保存"
-            confirmColor="primary"
-        >
-            <TextField
-                margin="dense"
-                label="Music ID"
-                fullWidth
-                required
-                value={editData?.music_id ?? ""}
-                onChange={(e) => {
-                    setEditData(editData ? { ...editData, music_id: e.target.value } : {
-                        music_id: e.target.value,
-                        music_common_id: "",
-                        user_music_setting_id: "",
-                        title: "",
-                        favorite: false,
-                        skip: false,
-                        memo: "",
-                    });
-                    handleFieldChange("music_id", e.target.value);
-                }}
-                error={!!errors.music_id}
-                helperText={errors.music_id}
-            />
-            <TextField
-                margin="dense"
-                label="Title"
-                fullWidth
-                required
-                value={editData?.title ?? ""}
-                onChange={(e) => {
-                    setEditData(editData ? { ...editData, title: e.target.value } : {
-                        music_id: "",
-                        music_common_id: "",
-                        user_music_setting_id: "",
-                        title: e.target.value,
-                        favorite: false,
-                        skip: false,
-                        memo: "",
-                    });
-                    handleFieldChange("title", e.target.value);
-                }}
-                error={!!errors.title}
-                helperText={errors.title}
-            />
-        </DialogBase>
-    );
-
     // Reset errors when dialog opens/closes
     useEffect(() => {
         if (open) {
@@ -142,27 +84,6 @@ export default function EditDialog({
             onSave();
         }
     };
-
-    // Fetch video info from Niconico API
-    const handleGetInfo = async () => {
-        const musicId = editData?.music_id?.trim();
-    const handleSave = () => {
-        if (!hasValidationErrors(errors)) {
-            onSave();
-        }
-    };
-
-
-        if (!musicId) return;
-
-        const title = await fetchVideoInfo(musicId);
-        if (title) {
-            setEditData(prev => prev ? { ...prev, title } : prev);
-            // Clear title validation error if title was successfully fetched
-            setErrors(prev => ({ ...prev, title: "" }));
-        }
-
-        }
 
     return (
         <DialogBase
