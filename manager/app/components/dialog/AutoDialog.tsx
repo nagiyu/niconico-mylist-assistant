@@ -6,6 +6,7 @@ import {
   Button,
   TextField,
 } from "@mui/material";
+import DialogBase from "./DialogBase";
 import { useState, useEffect } from "react";
 import { ExtendedValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
 import { generateTimestampTitle } from "@/app/utils/date";
@@ -89,84 +90,79 @@ export default function AutoDialog({
     };
 
     return (
-        <Dialog open={open} onClose={onClose}>
-            <DialogTitle>自動処理</DialogTitle>
-            <DialogContent>
-                <TextField
-                    margin="dense"
-                    label="Email"
-                    type="email"
-                    fullWidth
-                    required
-                    value={email}
-                    onChange={e => {
-                        const value = e.target.value;
-                        setEmail(value);
-                        handleFieldChange("email", value);
-                    }}
-                    error={!!errors.email}
-                    helperText={errors.email}
-                />
-                <TextField
-                    margin="dense"
-                    label="Password"
-                    type="password"
-                    fullWidth
-                    required
-                    value={password}
-                    onChange={e => {
-                        const value = e.target.value;
-                        setPassword(value);
-                        handleFieldChange("password", value);
-                    }}
-                    error={!!errors.password}
-                    helperText={errors.password}
-                />
-                <TextField
-                    margin="dense"
-                    label="Mylist Title"
-                    fullWidth
-                    required
-                    value={mylistTitle}
-                    onChange={e => {
-                        const value = e.target.value;
-                        setMylistTitle(value);
-                        handleFieldChange("mylistTitle", value);
-                    }}
-                    error={!!errors.mylistTitle}
-                    helperText={errors.mylistTitle}
-                />
-                <TextField
-                    margin="dense"
-                    label="Count"
-                    type="number"
-                    fullWidth
-                    required
-                    value={count}
-                    onChange={e => {
-                        const value = Number(e.target.value);
-                        setCount(value);
-                        handleFieldChange("count", value);
-                    }}
-                    inputProps={{ min: 1, max: maxCount }}
-                    error={!!errors.count}
-                    helperText={errors.count}
-                />
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>キャンセル</Button>
-                <Button 
-                    variant="contained" 
-                    color="secondary" 
-                    onClick={handleAuto}
-                    disabled={
-                        hasValidationErrors(errors) ||
-                        !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > maxCount
-                    }
-                >
-                    実行
-                </Button>
-            </DialogActions>
-        </Dialog>
+        <DialogBase
+            open={open}
+            title="自動処理"
+            onClose={onClose}
+            onConfirm={handleAuto}
+            confirmText="実行"
+            confirmColor="secondary"
+            disabled={
+                hasValidationErrors(errors) ||
+                !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > maxCount
+            }
+        >
+            <TextField
+                margin="dense"
+                label="Email"
+                type="email"
+                fullWidth
+                required
+                value={email}
+                onChange={e => {
+                    const value = e.target.value;
+                    setEmail(value);
+                    handleFieldChange("email", value);
+                }}
+                error={!!errors.email}
+                helperText={errors.email}
+            />
+            <TextField
+                margin="dense"
+                label="Password"
+                type="password"
+                fullWidth
+                required
+                value={password}
+                onChange={e => {
+                    const value = e.target.value;
+                    setPassword(value);
+                    handleFieldChange("password", value);
+                }}
+                error={!!errors.password}
+                helperText={errors.password}
+            />
+            <TextField
+                margin="dense"
+                label="Mylist Title"
+                fullWidth
+                required
+                value={mylistTitle}
+                onChange={e => {
+                    const value = e.target.value;
+                    setMylistTitle(value);
+                    handleFieldChange("mylistTitle", value);
+                }}
+                error={!!errors.mylistTitle}
+                helperText={errors.mylistTitle}
+            />
+            <TextField
+                margin="dense"
+                label="Count"
+                type="number"
+                fullWidth
+                required
+                value={count}
+                onChange={e => {
+                    const value = Number(e.target.value);
+                    setCount(value);
+                    handleFieldChange("count", value);
+                }}
+                inputProps={{ min: 1, max: maxCount }}
+                error={!!errors.count}
+                helperText={errors.count}
+            />
+        </DialogBase>
     );
+
 }
