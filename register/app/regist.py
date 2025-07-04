@@ -81,7 +81,7 @@ def distribute_id_list(id_list, n):
     return chunks
 
 
-def process_regist(email, password, id_list, title: str = None):
+def process_regist(email, password, id_list):
     driver = selenium_helper.create_chrome_driver()
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
@@ -96,7 +96,7 @@ def regist(email, password, id_list, title: str = None):
     driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
     login(driver, email, password)
     remove_all_mylist(driver)
-    created_title = create_mylist(driver, title)
+    create_mylist(driver, title)
     driver.quit()
 
     threads = min(MAX_THREADS, len(id_list))
@@ -106,7 +106,7 @@ def regist(email, password, id_list, title: str = None):
         # Submit all tasks first, then collect results
         futures = []
         for chunk in id_chunks:
-            future = executor.submit(process_regist, email, password, created_title, chunk)
+            future = executor.submit(process_regist, email, password, chunk)
             futures.append(future)
         
         # Collect results from all futures
