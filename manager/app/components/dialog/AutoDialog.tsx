@@ -95,7 +95,7 @@ export default function AutoDialog({
             title="自動処理"
             onClose={onClose}
             onConfirm={handleAuto}
-            confirmText="自動処理"
+            confirmText="実行"
             confirmColor="secondary"
             disabled={
                 hasValidationErrors(errors) ||

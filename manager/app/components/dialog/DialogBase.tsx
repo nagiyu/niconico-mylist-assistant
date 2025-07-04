@@ -16,6 +16,9 @@ interface DialogBaseProps {
   confirmColor?: "primary" | "secondary" | "error" | "info" | "success" | "warning";
   disabled?: boolean;
   children: React.ReactNode;
+  actions?: React.ReactNode;
+  showCancel?: boolean;
+  cancelText?: string;
 }
 
 export default function DialogBase({
@@ -27,17 +30,26 @@ export default function DialogBase({
   confirmColor = "primary",
   disabled = false,
   children,
+  actions,
+  showCancel = true,
+  cancelText = "キャンセル",
 }: DialogBaseProps) {
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>{children}</DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>キャンセル</Button>
-        {onConfirm && (
-          <Button variant="contained" color={confirmColor} onClick={onConfirm} disabled={disabled}>
-            {confirmText}
-          </Button>
+        {actions !== undefined ? (
+          actions
+        ) : (
+          <>
+            {showCancel && <Button onClick={onClose}>{cancelText}</Button>}
+            {onConfirm && (
+              <Button variant="contained" color={confirmColor} onClick={onConfirm} disabled={disabled}>
+                {confirmText}
+              </Button>
+            )}
+          </>
         )}
       </DialogActions>
     </Dialog>

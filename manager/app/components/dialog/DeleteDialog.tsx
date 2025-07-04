@@ -1,3 +1,4 @@
+import { Button } from "@mui/material";
 import DialogBase from "./DialogBase";
 import { DeleteTarget } from "@/app/types/DeleteTarget";
 
@@ -19,9 +20,14 @@ export default function DeleteDialog({
             open={open}
             title="削除の確認"
             onClose={onClose}
-            onConfirm={onDelete}
-            confirmText="削除"
-            confirmColor="error"
+            actions={
+                <>
+                    <Button onClick={onClose}>キャンセル</Button>
+                    <Button variant="contained" color="error" onClick={onDelete}>
+                        削除
+                    </Button>
+                </>
+            }
         >
             {target ? (
                 <div>
@@ -35,4 +41,3 @@ export default function DeleteDialog({
         </DialogBase>
     );
 }
-

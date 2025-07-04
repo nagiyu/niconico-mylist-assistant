@@ -1,6 +1,5 @@
 import DialogBase from "./DialogBase";
-import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
-import { TextField } from "@mui/material";
+import { FormGroup, FormControlLabel, Checkbox, TextField, Button, DialogActions, CircularProgress } from "@mui/material";
 
 import { useState, useEffect } from "react";
 
@@ -30,6 +29,15 @@ export default function EditDialog({
     const { isLoading: isLoadingInfo, error: infoError, fetchVideoInfo } = useVideoInfo();
 
     // Real-time validation on field change
+    const handleFieldChange = (field: string, value: string) => {
+        const newErrors = { ...errors };
+        if (!validateField(field, value)) {
+            newErrors[field as keyof typeof newErrors] = `${field} is invalid`;
+        } else {
+            newErrors[field as keyof typeof newErrors] = "";
+        }
+        setErrors(newErrors);
+    };
 
     // Validate all fields
     const validateForm = (): boolean => {
@@ -47,17 +55,6 @@ export default function EditDialog({
             setErrors({ music_id: "", title: "" });
         }
     }, [open]);
-
-
-    const handleFieldChange = (field: string, value: string) => {
-        const newErrors = { ...errors };
-        if (!validateField(field, value)) {
-            newErrors[field as keyof typeof newErrors] = `${field} is invalid`;
-        } else {
-            newErrors[field as keyof typeof newErrors] = "";
-        }
-        setErrors(newErrors);
-    };
 
     // Reset errors when dialog opens/closes
     useEffect(() => {
@@ -91,9 +88,30 @@ export default function EditDialog({
             open={open}
             title={!!editData?.user_music_setting_id ? "編集" : "追加"}
             onClose={onClose}
-            onConfirm={handleSave}
-            confirmText="保存"
-            confirmColor="primary"
+            actions={
+                <>
+                    <Button onClick={onClose}>キャンセル</Button>
+                    <Button
+                        onClick={handleGetInfo}
+                        disabled={isLoadingInfo || !editData?.music_id?.trim()}
+                        startIcon={isLoadingInfo ? <CircularProgress size={16} /> : null}
+                    >
+                        {isLoadingInfo ? "取得中..." : "Info"}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleSave}
+                        disabled={
+                            !!errors.music_id ||
+                            !!errors.title ||
+                            !editData?.music_id?.trim() ||
+                            !editData?.title?.trim()
+                        }
+                    >
+                        保存
+                    </Button>
+                </>
+            }
         >
             <TextField
                 margin="dense"
@@ -169,5 +187,3 @@ export default function EditDialog({
         </DialogBase>
     );
 }
-
-
