@@ -1,3 +1,4 @@
+import React from "react";
 import DialogBase from "./DialogBase";
 import { FormGroup, FormControlLabel, Checkbox, TextField, Button, DialogActions, CircularProgress } from "@mui/material";
 
@@ -30,13 +31,8 @@ export default function EditDialog({
 
     // Real-time validation on field change
     const handleFieldChange = (field: string, value: string) => {
-        const newErrors = { ...errors };
-        if (!validateField(field, value)) {
-            newErrors[field as keyof typeof newErrors] = `${field} is invalid`;
-        } else {
-            newErrors[field as keyof typeof newErrors] = "";
-        }
-        setErrors(newErrors);
+        const error = validateField(field, value);
+        setErrors((prev: ValidationErrors) => ({ ...prev, [field]: error }));
     };
 
     // Validate all fields
@@ -71,9 +67,9 @@ export default function EditDialog({
 
         const title = await fetchVideoInfo(musicId);
         if (title) {
-            setEditData(prev => prev ? { ...prev, title } : prev);
+            setEditData((prev: EditData) => prev ? { ...prev, title } : prev);
             // Clear title validation error if title was successfully fetched
-            setErrors(prev => ({ ...prev, title: "" }));
+            setErrors((prev: ValidationErrors) => ({ ...prev, title: "" }));
         }
     };
 
@@ -119,9 +115,9 @@ export default function EditDialog({
                 fullWidth
                 required
                 value={editData?.music_id ?? ""}
-                onChange={e => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const value = e.target.value;
-                    setEditData(data => data ? { ...data, music_id: value } : data);
+                    setEditData((data: EditData) => data ? { ...data, music_id: value } : data);
                     handleFieldChange("music_id", value);
                 }}
                 disabled={!!editData?.user_music_setting_id}
@@ -134,9 +130,9 @@ export default function EditDialog({
                 fullWidth
                 required
                 value={editData?.title ?? ""}
-                onChange={e => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const value = e.target.value;
-                    setEditData(data => data ? { ...data, title: value } : data);
+                    setEditData((data: EditData) => data ? { ...data, title: value } : data);
                     handleFieldChange("title", value);
                 }}
                 error={!!errors.title}
@@ -152,8 +148,8 @@ export default function EditDialog({
                     control={
                         <Checkbox
                             checked={!!editData?.favorite}
-                            onChange={e =>
-                                setEditData(data =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setEditData((data: EditData) =>
                                     data ? { ...data, favorite: e.target.checked } : data
                                 )
                             }
@@ -165,8 +161,8 @@ export default function EditDialog({
                     control={
                         <Checkbox
                             checked={!!editData?.skip}
-                            onChange={e =>
-                                setEditData(data =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setEditData((data: EditData) =>
                                     data ? { ...data, skip: e.target.checked } : data
                                 )
                             }
@@ -180,7 +176,9 @@ export default function EditDialog({
                 label="メモ"
                 fullWidth
                 value={editData?.memo ?? ""}
-                onChange={e => setEditData(data => data ? { ...data, memo: e.target.value } : data)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEditData((data: EditData) => data ? { ...data, memo: e.target.value } : data)
+                }
                 multiline
                 minRows={2}
             />
