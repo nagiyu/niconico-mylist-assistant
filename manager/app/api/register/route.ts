@@ -47,7 +47,7 @@ async function warmupLambda(): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, password, id_list, subscription }: IRegisterRequest = await req.json();
+        const { email, password, id_list, subscription, title }: IRegisterRequest = await req.json();
 
         // パスワード暗号化
         const encrypted_password = encryptPassword(password, SHARED_SECRET_KEY);
@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
                 password: encrypted_password,
                 id_list,
                 subscription: subscription ? JSON.stringify(subscription) : null,
+                title: title || "",
             }),
         }).catch((error) => {
             console.error("Lambda invocation failed:", error);
