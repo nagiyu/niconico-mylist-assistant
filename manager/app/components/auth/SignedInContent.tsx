@@ -523,7 +523,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                     const id_list = shuffled.slice(0, count).map(r => r.music_id);
 
                     try {
-                        const reqBody: IRegisterRequest = { email, password, id_list, subscription };
+                        const reqBody: IRegisterRequest = { email, password, id_list, subscription, title: mylistTitle };
                         const res = await fetch("/api/register", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
