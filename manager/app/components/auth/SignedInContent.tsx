@@ -371,6 +371,18 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     fullWidth
                                     variant="outlined"
                                     sx={{ backgroundColor: "#fff" }}
+                                    InputProps={{
+                                        endAdornment: searchKeyword ? (
+                                            <IconButton
+                                                aria-label="clear search"
+                                                onClick={() => setSearchKeyword('')}
+                                                edge="end"
+                                                size="small"
+                                            >
+                                                <ClearIcon />
+                                            </IconButton>
+                                        ) : null,
+                                    }}
                                 />
                             </Box>
                             
