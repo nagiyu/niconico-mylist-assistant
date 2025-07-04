@@ -23,7 +23,9 @@ import {
   Select,
   MenuItem,
   Pagination,
+  IconButton,
 } from "@mui/material";
+import ClearIcon from '@mui/icons-material/Clear';
 import styles from "../../page.module.css";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
@@ -371,6 +373,18 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     fullWidth
                                     variant="outlined"
                                     sx={{ backgroundColor: "#fff" }}
+                                    InputProps={{
+                                        endAdornment: searchTerm ? (
+                                            <IconButton
+                                                aria-label="clear search"
+                                                onClick={() => setSearchTerm('')}
+                                                edge="end"
+                                                size="small"
+                                            >
+                                                <ClearIcon />
+                                            </IconButton>
+                                        ) : null,
+                                    }}
                                 />
                             </Box>
                             
