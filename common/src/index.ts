@@ -1,2 +1,2 @@
-export * from './moduleA';
-export * from './moduleB';
+export * from '../utils/date';
+export * from '../utils/validation';
