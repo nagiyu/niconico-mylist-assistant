@@ -8,8 +8,8 @@ import {
 } from "@mui/material";
 import DialogBase from "./DialogBase";
 import { useState, useEffect } from "react";
-import { ExtendedValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
-import { generateTimestampTitle } from "@/app/utils/date";
+import { ExtendedValidationErrors, validateField, hasValidationErrors } from "@common/utils/validation";
+import { generateTimestampTitle } from "@common/utils/date";
 
 interface AutoDialogProps {
     open: boolean;
