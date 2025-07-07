@@ -31,15 +31,15 @@ export default function EditDialog({
 
     // Real-time validation on field change
     const handleFieldChange = (field: string, value: string) => {
-        const error = validation.validateField(field, value);
+        const error = validateField(field, value);
         setErrors((prev: ValidationErrors) => ({ ...prev, [field]: error }));
     };
 
     // Validate all fields
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {
-            music_id: validation.validateField("music_id", editData?.music_id ?? ""),
-            title: validation.validateField("title", editData?.title ?? ""),
+            music_id: validateField("music_id", editData?.music_id ?? ""),
+            title: validateField("title", editData?.title ?? ""),
         };
         setErrors(newErrors);
         return !hasValidationErrors(newErrors);
