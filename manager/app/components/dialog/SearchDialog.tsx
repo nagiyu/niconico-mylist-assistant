@@ -17,7 +17,7 @@ import {
 import ClearIcon from '@mui/icons-material/Clear';
 import { useState, useEffect } from "react";
 import styles from "./SearchDialog.module.css";
-import { ValidationErrors, validateField, hasValidationErrors } from "@/app/utils/validation";
+import * as validation from "../../common/utils/validation";
 import { useVideoInfo } from "@/hooks/useVideoInfo";
 
 interface SearchDialogProps {
