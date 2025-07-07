@@ -9,7 +9,7 @@ import {
 import DialogBase from "./DialogBase";
 import { useState, useEffect } from "react";
 import { ExtendedValidationErrors, validateField, hasValidationErrors } from "common";
-import { generateTimestampTitle } from "@common/utils/date";
+import { generateTimestampTitle } from "common";
 
 interface AutoDialogProps {
     open: boolean;
