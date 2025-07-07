@@ -18,7 +18,8 @@ FROM base AS builder
 
 WORKDIR /app
 
-COPY . .
+COPY manager/. .
+COPY common ../common
 
 RUN npm install && \
     npm run build
