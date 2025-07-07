@@ -18,8 +18,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import * as validation from "../../common/utils/validation";
-import * as validation from "../../common/utils/validation";
+import { validateField } from "@common/utils/validation";
 
 interface BulkImportRow {
     id: number;
@@ -100,7 +99,7 @@ export default function BulkImportDialog({
                 
                 // Validate the fields
                 if (field === 'music_id') {
-                    const error = validation.validateField("music_id", value);
+                    const error = validateField("music_id", value);
                     if (error && row.title.trim() !== '') {
                         updatedRow.music_id_error = error;
                     } else {
@@ -115,7 +114,7 @@ export default function BulkImportDialog({
                         }, 100);
                     }
                 } else if (field === 'title') {
-                    const error = validation.validateField("title", value);
+                    const error = validateField("title", value); 
                     if (error && row.music_id.trim() !== '') {
                         updatedRow.title_error = error;
                     } else {
@@ -132,10 +131,10 @@ export default function BulkImportDialog({
                 if (field === 'music_id' && value.trim() !== '' && row.title.trim() === '') {
                     // Don't set title error if we're about to auto-fetch
                     if (!row.isLoadingTitle) {
-                        updatedRow.title_error = validation.validateField("title", "");
+                        updatedRow.title_error = validateField("title", "");
                     }
                 } else if (field === 'title' && value.trim() !== '' && row.music_id.trim() === '') {
-                    updatedRow.music_id_error = validation.validateField("music_id", "");
+                    updatedRow.music_id_error = validateField("music_id", "");
                 }
                 
                 // Clear errors if both fields are empty (valid empty row)
@@ -194,8 +193,8 @@ export default function BulkImportDialog({
             }
             
             // Validate non-empty rows
-            const musicIdError = validation.validateField("music_id", row.music_id);
-            const titleError = validation.validateField("title", row.title);
+            const musicIdError = validateField("music_id", row.music_id);
+            const titleError = validateField("title", row.title);
             
             if (musicIdError) {
                 updatedRow.music_id_error = musicIdError;
