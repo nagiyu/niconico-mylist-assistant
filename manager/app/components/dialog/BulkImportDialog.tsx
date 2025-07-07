@@ -18,7 +18,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { validateField } from "@common/utils/validation";
+import { validateField } from "common";
 
 interface BulkImportRow {
     id: number;
