@@ -5,7 +5,7 @@ import { FormGroup, FormControlLabel, Checkbox, TextField, Button, DialogActions
 import { useState, useEffect } from "react";
 
 import { EditData } from "@/app/types/EditData";
-import { ExtendedValidationErrors, validateField, hasValidationErrors } from "../../../../../common/utils/validation";
+import { ExtendedValidationErrors, validateField, hasValidationErrors } from "@common/utils/validation";
 import { useVideoInfo } from "@/hooks/useVideoInfo";
 
 interface EditDialogProps {
