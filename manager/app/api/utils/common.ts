@@ -39,7 +39,3 @@ export function getAwsContext() {
 export function getCurrentTimestamp(): string {
   return new Date().toISOString();
 }
-// Exporting date and validation utils for manager usage
-export { generateTimestampTitle } from "../../../../common/utils/date";
-export { validateField } from "../../../../common/utils/validation";
-
