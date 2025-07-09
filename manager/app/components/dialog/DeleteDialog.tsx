@@ -1,10 +1,5 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-} from "@mui/material";
+import { Button } from "@mui/material";
+import DialogBase from "./DialogBase";
 import { DeleteTarget } from "@/app/types/DeleteTarget";
 
 interface DeleteDialogProps {
@@ -21,23 +16,28 @@ export default function DeleteDialog({
     onDelete,
 }: DeleteDialogProps) {
     return (
-        <Dialog open={open} onClose={onClose}>
-            <DialogTitle>削除の確認</DialogTitle>
-            <DialogContent>
-                {target ? (
-                    <div>
-                        <div>ID: {target.music_id}</div>
-                        <div>タイトル: {target.title}</div>
-                        <div>本当に削除しますか？</div>
-                    </div>
-                ) : (
+        <DialogBase
+            open={open}
+            title="削除の確認"
+            onClose={onClose}
+            actions={
+                <>
+                    <Button onClick={onClose}>キャンセル</Button>
+                    <Button variant="contained" color="error" onClick={onDelete}>
+                        削除
+                    </Button>
+                </>
+            }
+        >
+            {target ? (
+                <div>
+                    <div>ID: {target.music_id}</div>
+                    <div>タイトル: {target.title}</div>
                     <div>本当に削除しますか？</div>
-                )}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>キャンセル</Button>
-                <Button variant="contained" color="error" onClick={onDelete}>削除</Button>
-            </DialogActions>
-        </Dialog>
+                </div>
+            ) : (
+                <div>本当に削除しますか？</div>
+            )}
+        </DialogBase>
     );
 }

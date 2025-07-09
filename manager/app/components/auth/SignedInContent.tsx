@@ -22,7 +22,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Pagination,
+  IconButton,
 } from "@mui/material";
+import ClearIcon from '@mui/icons-material/Clear';
 import styles from "../../page.module.css";
 import EditDialog from "@/app/components/dialog/EditDialog";
 import DeleteDialog from "@/app/components/dialog/DeleteDialog";
@@ -74,6 +77,10 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [searchFavorite, setSearchFavorite] = useState<string>("");
     const [searchSkip, setSearchSkip] = useState<string>("");
 
+    // Pagination state
+    const [page, setPage] = useState(1);
+    const rowsPerPage = 20;
+
     // Notification manager hook
     const { subscription } = useNotificationManager();
 
@@ -92,7 +99,7 @@ export default function SignedInContent({ session }: { session: Session }) {
     };
 
     // 同期ボタン用の関数
-    const handleSync = async () => {
+    const syncMusic = async () => {
         setIsSyncing(true);
         try {
             await fetchMusic();
@@ -123,7 +130,9 @@ export default function SignedInContent({ session }: { session: Session }) {
 
     // 初回マウント時に API から取得
     useEffect(() => {
-        fetchMusic();
+        if (!isSyncing) {
+            syncMusic();
+        }
     }, [session.tokens]);
 
     const handleAdd = () => {
@@ -298,6 +307,14 @@ export default function SignedInContent({ session }: { session: Session }) {
         return (musicIdMatch || titleMatch) && favoriteMatch && skipMatch;
     });
 
+    // Pagination logic
+    const pageCount = Math.ceil(filteredRows.length / rowsPerPage);
+    const paginatedRows = filteredRows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+
     return (
         <>
             <AppBar position="static" color="default" elevation={1}>
@@ -318,7 +335,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         <Button variant="contained" color="info" sx={{ minWidth: 80 }} onClick={() => setBulkImportDialogOpen(true)}>Bulk Import</Button>
                         <Button variant="contained" color="secondary" sx={{ minWidth: 80 }} onClick={() => setAutoDialogOpen(true)}>Auto</Button>
                         <Button variant="contained" color="success" sx={{ minWidth: 80 }} onClick={() => setSearchDialogOpen(true)}>Search</Button>
-                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={handleSync} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
+                        <Button variant="outlined" color="primary" sx={{ minWidth: 80 }} onClick={syncMusic} disabled={isSyncing} startIcon={isSyncing ? <CircularProgress size={16} /> : null}>
                             {isSyncing ? "同期中..." : "Sync"}
                         </Button>
                         <Button variant="outlined" color="inherit" sx={{ minWidth: 80 }} onClick={() => setSettingsDialogOpen(true)}>設定</Button>
@@ -356,6 +373,18 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     fullWidth
                                     variant="outlined"
                                     sx={{ backgroundColor: "#fff" }}
+                                    InputProps={{
+                                        endAdornment: searchTerm ? (
+                                            <IconButton
+                                                aria-label="clear search"
+                                                onClick={() => setSearchTerm('')}
+                                                edge="end"
+                                                size="small"
+                                            >
+                                                <ClearIcon />
+                                            </IconButton>
+                                        ) : null,
+                                    }}
                                 />
                             </Box>
                             
@@ -433,7 +462,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredRows.map((row) =>
+                                    {paginatedRows.map((row) =>
                                         <TableRow key={row.music_id}>
                                             <TableCell>{row.music_id}</TableCell>
                                             <TableCell>{row.title}</TableCell>
@@ -466,6 +495,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                             </Table>
                         </TableContainer>
                     </div>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+                        <Pagination count={pageCount} page={page} onChange={handlePageChange} color="primary" />
+                    </Box>
                 </>
             </main>
 
@@ -504,7 +537,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                     const id_list = shuffled.slice(0, count).map(r => r.music_id);
 
                     try {
-                        const reqBody: IRegisterRequest = { email, password, id_list, subscription };
+                        const reqBody: IRegisterRequest = { email, password, id_list, subscription, title: mylistTitle };
                         const res = await fetch("/api/register", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },

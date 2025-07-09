@@ -14,10 +14,13 @@ describe('POST /api/register', () => {
     (fetch as jest.Mock).mockClear();
   });
 
-  it('should handle registration request with warmup', async () => {
+  it('should handle registration request with successful warmup', async () => {
     // Mock successful warmup and registration requests
     (fetch as jest.Mock)
-      .mockResolvedValueOnce({ ok: true }) // warmup request
+      .mockResolvedValueOnce({ 
+        ok: true, 
+        json: async () => ({ message: "Lambda is ready", timestamp: 1000 })
+      }) // warmup request
       .mockResolvedValueOnce({ ok: true }); // actual request
 
     const mockRequest = {
@@ -37,11 +40,10 @@ describe('POST /api/register', () => {
     expect(fetch).toHaveBeenCalledTimes(2); // warmup + actual
   });
 
-  it('should proceed even if warmup fails', async () => {
-    // Mock failed warmup but successful registration
+  it('should return 503 if warmup fails', async () => {
+    // Mock failed warmup
     (fetch as jest.Mock)
-      .mockRejectedValueOnce(new Error('Warmup failed')) // warmup request fails
-      .mockResolvedValueOnce({ ok: true }); // actual request succeeds
+      .mockRejectedValueOnce(new Error('Warmup failed')); // warmup request fails
 
     const mockRequest = {
       json: async () => ({
@@ -55,7 +57,30 @@ describe('POST /api/register', () => {
     const response = await POST(mockRequest);
     const data = await response.json();
 
-    expect(response.status).toBe(202);
-    expect(data.message).toBe('登録処理を開始しました。完了時に通知をお送りします。');
+    expect(response.status).toBe(503);
+    expect(data.error).toBe('サーバーの準備ができていません。しばらく待ってからもう一度お試しください。');
+    expect(fetch).toHaveBeenCalledTimes(1); // only warmup, no actual request
+  });
+
+  it('should return 503 if warmup returns non-ok status', async () => {
+    // Mock warmup with non-ok status
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: false, status: 500 }); // warmup request fails
+
+    const mockRequest = {
+      json: async () => ({
+        email: 'test@example.com',
+        password: 'testpassword', 
+        id_list: ['sm12345'],
+        subscription: null
+      })
+    } as NextRequest;
+
+    const response = await POST(mockRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(data.error).toBe('サーバーの準備ができていません。しばらく待ってからもう一度お試しください。');
+    expect(fetch).toHaveBeenCalledTimes(1); // only warmup, no actual request
   });
 });

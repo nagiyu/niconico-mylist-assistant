@@ -3,4 +3,5 @@ export interface IRegisterRequest {
   password: string;
   id_list: string[];
   subscription?: PushSubscription | null;
+  title?: string;
 }

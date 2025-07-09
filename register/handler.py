@@ -59,11 +59,13 @@ def lambda_handler(event, context):
         encrypted_password = data.get("password")
         id_list = data.get("id_list")
         subscription_json = data.get("subscription")
+        title = data.get("title", "")
     else:
         email = None
         encrypted_password = None
         id_list = None
         subscription_json = None
+        title = None
 
     if not email or not encrypted_password or not id_list:
         return {
@@ -88,7 +90,7 @@ def lambda_handler(event, context):
         }
 
     # 登録処理実行
-    failed_id_list = regist.regist(email, password, id_list)
+    failed_id_list = regist.regist(email, password, id_list, title)
     
     # プッシュ通知の送信
     if subscription_json:
