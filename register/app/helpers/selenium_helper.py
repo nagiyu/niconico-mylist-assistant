@@ -1,6 +1,7 @@
 import os
 import uuid
 import boto3
+import logging
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -86,22 +87,28 @@ def wait_and_accept_alert(driver: WebDriver, timeout: int = 10) -> None:
     alert.accept()
 
 
-def save_screenshot_to_s3(driver: WebDriver) -> str:
+def save_screenshot_to_s3(driver: WebDriver) -> str | None:
     """
     Takes a screenshot using the given Selenium driver and uploads it to S3.
-    Returns the S3 key of the uploaded screenshot.
+    Returns the S3 key of the uploaded screenshot, or None if failed.
     """
-    screenshot_bytes = driver.get_screenshot_as_png()
-    s3 = boto3.client("s3")
-    bucket = os.environ["S3_BUCKET_NAME"]
-    key = f"screenshots/{uuid.uuid4().hex}.png"
-    s3.put_object(Bucket=bucket, Key=key, Body=screenshot_bytes, ContentType="image/png")
+    try:
+        screenshot_bytes = driver.get_screenshot_as_png()
+    except Exception as e:
+        logging.warning(f"Failed to take screenshot with Selenium: {e}")
+        return None
 
-    # Build S3 URL (assuming public-read or appropriate permissions)
-    region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
-    s3_url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
-
-    return s3_url
+    try:
+        s3 = boto3.client("s3")
+        bucket = os.environ["S3_BUCKET_NAME"]
+        key = f"screenshots/{uuid.uuid4().hex}.png"
+        s3.put_object(Bucket=bucket, Key=key, Body=screenshot_bytes, ContentType="image/png")
+        region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+        s3_url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
+        return s3_url
+    except Exception as e:
+        logging.warning(f"Failed to upload screenshot to S3: {e}")
+        return None
 
 
 def wait_and_find_element(driver: WebDriver, xpath: str, timeout: int = 10) -> WebElement:
