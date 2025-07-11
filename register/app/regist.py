@@ -66,9 +66,15 @@ def add_videos_to_mylist(driver, id_list):
             time.sleep(1)
         except Exception:
             selenium_helper.save_screenshot_to_s3(driver)
+            # Check if driver is still alive
+            try:
+                driver.title
+            except Exception:
+                # Driver is dead, raise to outer scope
+                raise
             failed_id_list.append(video_id)
-            pass
     return failed_id_list
+
 
 
 def distribute_id_list(id_list, n):
@@ -81,13 +87,32 @@ def distribute_id_list(id_list, n):
     return chunks
 
 
-def process_regist(email, password, id_list):
-    driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
-    login(driver, email, password)
-    failed_id_list = add_videos_to_mylist(driver, id_list)
-    driver.quit()
+def process_regist(email, password, id_list, max_retries=3):
+    retry_count = 0
+    remaining_ids = id_list
+    failed_id_list = []
+
+    while retry_count < max_retries and remaining_ids:
+        driver = selenium_helper.create_chrome_driver()
+        driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
+        login(driver, email, password)
+        try:
+            failed_id_list = add_videos_to_mylist(driver, remaining_ids)
+            driver.quit()
+            # If no failed ids, break early
+            if not failed_id_list:
+                break
+            # Prepare for retry with failed ids
+            remaining_ids = failed_id_list
+            retry_count += 1
+        except Exception:
+            driver.quit()
+            # If driver crashed, retry with remaining ids
+            retry_count += 1
+            continue
+
     return failed_id_list
+
 
 
 
