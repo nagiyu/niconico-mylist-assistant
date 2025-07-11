@@ -60,15 +60,11 @@ def add_videos_to_mylist(driver, id_list):
         try:
             driver.get(f"{NICO_URL}/watch/{video_id}")
             element = selenium_helper.wait_and_find_element(driver, VIDEO_MENU_PARENT_XPATH)
-            time.sleep(1)
             selenium_helper.wait_and_click_in_element(element, VIDEO_MENU_BUTTON_XPATH)
-            time.sleep(1)
             selenium_helper.wait_and_click(driver, VIDEO_ADD_TO_MYLIST_XPATH)
-            time.sleep(1)
             selenium_helper.wait_and_click(driver, VIDEO_MYLIST_SELECT_XPATH)
             time.sleep(1)
         except Exception:
-            time.sleep(1)
             selenium_helper.save_screenshot_to_s3(driver)
             failed_id_list.append(video_id)
             pass
