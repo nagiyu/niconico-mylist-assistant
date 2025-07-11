@@ -35,6 +35,8 @@ def create_chrome_driver() -> WebDriver:
     }
     options.add_experimental_option("prefs", prefs)
 
+    options.add_argument(f"--user-data-dir=/tmp/chrome_profile_{os.getpid()}_{uuid.uuid4()}")
+
     driver = webdriver.Chrome(options=options)
     
     # Set conservative timeouts to prevent connection issues
