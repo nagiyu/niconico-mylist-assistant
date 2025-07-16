@@ -65,7 +65,7 @@ def add_videos_to_mylist(driver, id_list):
             selenium_helper.wait_and_click(driver, VIDEO_MYLIST_SELECT_XPATH)
             time.sleep(1)
         except Exception:
-            selenium_helper.save_screenshot_to_s3(driver)
+            # selenium_helper.save_screenshot_to_s3(driver)
             # Check if driver is still alive
             try:
                 driver.title
