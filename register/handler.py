@@ -108,7 +108,7 @@ def lambda_handler(event, context):
     elif action == "register":
         # マイリスト登録処理
         try:
-            failed_id_list = regist.process_regist(email, password, id_list)
+            failed_id_list = regist.regist(email, password, id_list, title)
             return {
                 "statusCode": 200,
                 "body": json.dumps({"failed_id_list": failed_id_list})

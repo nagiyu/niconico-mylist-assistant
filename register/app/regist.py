@@ -117,34 +117,47 @@ def process_regist(email, password, id_list, max_retries=3):
 
 
 def regist(email, password, id_list, title: str = None):
-    driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
-    login(driver, email, password)
-    remove_all_mylist(driver)
-    create_mylist(driver, title)
-    driver.quit()
+    # マイリスト削除と作成は別メソッドに分割
+    def delete_mylist(email, password):
+        driver = selenium_helper.create_chrome_driver()
+        driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
+        login(driver, email, password)
+        remove_all_mylist(driver)
+        driver.quit()
 
-    threads = min(MAX_THREADS, len(id_list))
-    id_chunks = distribute_id_list(id_list, threads)
+    def register_mylist(email, password, id_list, title: str = None):
+        driver = selenium_helper.create_chrome_driver()
+        driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
+        login(driver, email, password)
+        create_mylist(driver, title)
+        driver.quit()
 
-    with ThreadPoolExecutor(max_workers=threads) as executor:
-        # Submit all tasks first, then collect results
-        futures = []
-        for chunk in id_chunks:
-            future = executor.submit(process_regist, email, password, chunk)
-            futures.append(future)
-        
-        # Collect results from all futures
-        failed_id_lists = []
-        for future in futures:
-            failed_id_lists.append(future.result())
+        threads = min(MAX_THREADS, len(id_list))
+        id_chunks = distribute_id_list(id_list, threads)
 
-    # 1つのリストにまとめる
-    failed_id_list = []
+        with ThreadPoolExecutor(max_workers=threads) as executor:
+            # Submit all tasks first, then collect results
+            futures = []
+            for chunk in id_chunks:
+                future = executor.submit(process_regist, email, password, chunk)
+                futures.append(future)
 
-    for sublist in failed_id_lists:
-        for video_id in sublist:
-            failed_id_list.append(video_id)
+            # Collect results from all futures
+            failed_id_lists = []
+            for future in futures:
+                failed_id_lists.append(future.result())
 
-    return failed_id_list
+        # 1つのリストにまとめる
+        failed_id_list = []
+
+        for sublist in failed_id_lists:
+            for video_id in sublist:
+                failed_id_list.append(video_id)
+
+        return failed_id_list
+
+    # 削除処理を先に実行
+    delete_mylist(email, password)
+    # 登録処理を実行
+    return register_mylist(email, password, id_list, title)
 
