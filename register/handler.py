@@ -109,15 +109,35 @@ def lambda_handler(event, context):
     elif action == "register":
         # マイリスト登録処理
         try:
+            # 識別子とチャンクインデックスを取得
+            uuid = data.get("uuid")
+            chunk_index = data.get("chunk_index")
+
+            # 識別子ファイルパス
+            tmp_file_path = f"/tmp/register-{uuid}-{chunk_index}"
+
+            # 識別子ファイルを作成して処理中を示す
+            with open(tmp_file_path, "w") as f:
+                f.write("processing")
+
             failed_id_list = regist.regist(email, password, id_list)
-    
-            # プッシュ通知の送信
-            if subscription_json:
-                try:
-                    send_push_notification(subscription_json, failed_id_list)
-                except Exception as e:
-                    print(f"Failed to send push notification: {e}")
-                    # 通知送信失敗は処理全体を失敗させない
+
+            # 処理完了後、識別子ファイルを削除
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+            # 全ての識別子ファイルが削除されているか確認
+            tmp_dir = "/tmp"
+            files = [f for f in os.listdir(tmp_dir) if f.startswith(f"register-{uuid}-")]
+
+            if len(files) == 0:
+                # 全てのチャンク処理が完了したので通知を送信
+                if subscription_json:
+                    try:
+                        send_push_notification(subscription_json, failed_id_list)
+                    except Exception as e:
+                        print(f"Failed to send push notification: {e}")
+                        # 通知送信失敗は処理全体を失敗させない
 
             return {
                 "statusCode": 200,
@@ -128,3 +148,10 @@ def lambda_handler(event, context):
                 "statusCode": 500,
                 "body": json.dumps({"error": str(e)})
             }
+
+# Considerations for retry and failure scenarios:
+# - If a chunk processing fails and the file is not deleted, the notification will not be sent, which is safe to avoid duplicate notifications.
+# - A cleanup mechanism or TTL for these files might be needed to avoid stale files blocking notifications indefinitely.
+# - The manager side could implement retry logic for failed chunks based on the response or lack of notification.
+# - Logging and monitoring should be added to track the lifecycle of these identifier files and notification status.
+

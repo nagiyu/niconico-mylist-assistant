@@ -91,7 +91,10 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. 3つのリクエストを並列で fire-and-forget
-        chunks.forEach(chunk => {
+        // 識別子を生成
+        const uuid = crypto.randomUUID();
+
+        chunks.forEach((chunk, index) => {
             fetch(LAMBDA_ENDPOINT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -102,6 +105,8 @@ export async function POST(req: NextRequest) {
                     id_list: chunk,
                     subscription: subscription ? JSON.stringify(subscription) : null,
                     title: title || "",
+                    uuid: uuid, // 識別子を付与
+                    chunk_index: index, // チャンクのインデックスを付与
                 }),
             }).catch((error) => {
                 console.error("Register action failed:", error);
