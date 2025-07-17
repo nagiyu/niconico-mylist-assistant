@@ -90,8 +90,6 @@ export async function POST(req: NextRequest) {
             chunks.push(id_list.slice(i * chunkSize, (i + 1) * chunkSize));
         }
 
-        console.log("分割されたIDリスト:", chunks);
-
         // 3. 3つのリクエストを並列で fire-and-forget
         chunks.forEach(chunk => {
             fetch(LAMBDA_ENDPOINT, {
