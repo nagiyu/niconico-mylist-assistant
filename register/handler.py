@@ -61,6 +61,8 @@ def lambda_handler(event, context):
         subscription_json = data.get("subscription")
         title = data.get("title", "")
         action = data.get("action")  # New field to distinguish delete or register
+        uuid = data.get("uuid", "")
+        chunk_index = data.get("chunk_index", "")
     else:
         email = None
         encrypted_password = None
@@ -68,6 +70,8 @@ def lambda_handler(event, context):
         subscription_json = None
         title = None
         action = None
+        uuid = None
+        chunk_index = None
 
     if not email or not encrypted_password or not id_list:
         return {
@@ -109,15 +113,31 @@ def lambda_handler(event, context):
     elif action == "register":
         # マイリスト登録処理
         try:
+            # 識別子ファイルパス
+            tmp_file_path = f"/tmp/register-{uuid}-{chunk_index}"
+
+            # 識別子ファイルを作成して処理中を示す
+            with open(tmp_file_path, "w") as f:
+                f.write("processing")
+
             failed_id_list = regist.regist(email, password, id_list)
-    
-            # プッシュ通知の送信
-            if subscription_json:
-                try:
-                    send_push_notification(subscription_json, failed_id_list)
-                except Exception as e:
-                    print(f"Failed to send push notification: {e}")
-                    # 通知送信失敗は処理全体を失敗させない
+
+            # 処理完了後、識別子ファイルを削除
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+            # 全ての識別子ファイルが削除されているか確認
+            tmp_dir = "/tmp"
+            files = [f for f in os.listdir(tmp_dir) if f.startswith(f"register-{uuid}-")]
+
+            if len(files) == 0:
+                # 全てのチャンク処理が完了したので通知を送信
+                if subscription_json:
+                    try:
+                        send_push_notification(subscription_json, failed_id_list)
+                    except Exception as e:
+                        print(f"Failed to send push notification: {e}")
+                        # 通知送信失敗は処理全体を失敗させない
 
             return {
                 "statusCode": 200,
