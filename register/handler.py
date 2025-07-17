@@ -60,12 +60,14 @@ def lambda_handler(event, context):
         id_list = data.get("id_list")
         subscription_json = data.get("subscription")
         title = data.get("title", "")
+        action = data.get("action")  # New field to distinguish delete or register
     else:
         email = None
         encrypted_password = None
         id_list = None
         subscription_json = None
         title = None
+        action = None
 
     if not email or not encrypted_password or not id_list:
         return {
@@ -89,18 +91,40 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "Failed to decrypt password", "detail": str(e)})
         }
 
-    # 登録処理実行
-    failed_id_list = regist.regist(email, password, id_list, title)
-    
-    # プッシュ通知の送信
-    if subscription_json:
+    if action == "delete_and_create":
+        # マイリスト削除処理
         try:
-            send_push_notification(subscription_json, failed_id_list)
-        except Exception as e:
-            print(f"Failed to send push notification: {e}")
-            # 通知送信失敗は処理全体を失敗させない
+            regist.delete_and_create_mylist(email, password, title)
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"failed_id_list": failed_id_list})
-    }
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "Mylist deleted and created successfully"})
+            }
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"error": str(e)})
+            }
+
+    elif action == "register":
+        # マイリスト登録処理
+        try:
+            failed_id_list = regist.regist(email, password, id_list)
+    
+            # プッシュ通知の送信
+            if subscription_json:
+                try:
+                    send_push_notification(subscription_json, failed_id_list)
+                except Exception as e:
+                    print(f"Failed to send push notification: {e}")
+                    # 通知送信失敗は処理全体を失敗させない
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"failed_id_list": failed_id_list})
+            }
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"error": str(e)})
+            }

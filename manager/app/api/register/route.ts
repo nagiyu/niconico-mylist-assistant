@@ -61,23 +61,51 @@ export async function POST(req: NextRequest) {
             }, { status: 503 });
         }
 
-        // Warmup成功後、少し待ってから登録リクエストを送信
-        // 同じLambdaインスタンスが使用される可能性を高める
+        // Warmup成功後、少し待つ
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Lambda呼び出し（非同期・fire-and-forget）
-        fetch(LAMBDA_ENDPOINT, {
+        // 1. まず delete_and_create アクションを送信
+        const deleteResponse = await fetch(LAMBDA_ENDPOINT, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                action: "delete_and_create",
                 email,
                 password: encrypted_password,
                 id_list,
                 subscription: subscription ? JSON.stringify(subscription) : null,
                 title: title || "",
             }),
-        }).catch((error) => {
-            console.error("Lambda invocation failed:", error);
+        });
+
+        if (!deleteResponse.ok) {
+            console.error("Delete and create action failed", await deleteResponse.text());
+            return NextResponse.json({ error: "削除処理に失敗しました。" }, { status: 500 });
+        }
+
+        // 2. id_list を3等分
+        const chunkSize = Math.ceil(id_list.length / 3);
+        const chunks = [];
+        for (let i = 0; i < 3; i++) {
+            chunks.push(id_list.slice(i * chunkSize, (i + 1) * chunkSize));
+        }
+
+        // 3. 3つのリクエストを並列で fire-and-forget
+        chunks.forEach(chunk => {
+            fetch(LAMBDA_ENDPOINT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "register",
+                    email,
+                    password: encrypted_password,
+                    id_list: chunk,
+                    subscription: subscription ? JSON.stringify(subscription) : null,
+                    title: title || "",
+                }),
+            }).catch((error) => {
+                console.error("Register action failed:", error);
+            });
         });
 
         // 即座にレスポンスを返す（処理は非同期で続行）
