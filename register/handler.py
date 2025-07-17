@@ -61,6 +61,8 @@ def lambda_handler(event, context):
         subscription_json = data.get("subscription")
         title = data.get("title", "")
         action = data.get("action")  # New field to distinguish delete or register
+        uuid = data.get("uuid", "")
+        chunk_index = data.get("chunk_index", "")
     else:
         email = None
         encrypted_password = None
@@ -68,6 +70,8 @@ def lambda_handler(event, context):
         subscription_json = None
         title = None
         action = None
+        uuid = None
+        chunk_index = None
 
     if not email or not encrypted_password or not id_list:
         return {
@@ -109,10 +113,6 @@ def lambda_handler(event, context):
     elif action == "register":
         # マイリスト登録処理
         try:
-            # 識別子とチャンクインデックスを取得
-            uuid = data.get("uuid")
-            chunk_index = data.get("chunk_index")
-
             # 識別子ファイルパス
             tmp_file_path = f"/tmp/register-{uuid}-{chunk_index}"
 
@@ -148,10 +148,3 @@ def lambda_handler(event, context):
                 "statusCode": 500,
                 "body": json.dumps({"error": str(e)})
             }
-
-# Considerations for retry and failure scenarios:
-# - If a chunk processing fails and the file is not deleted, the notification will not be sent, which is safe to avoid duplicate notifications.
-# - A cleanup mechanism or TTL for these files might be needed to avoid stale files blocking notifications indefinitely.
-# - The manager side could implement retry logic for failed chunks based on the response or lack of notification.
-# - Logging and monitoring should be added to track the lifecycle of these identifier files and notification status.
-
