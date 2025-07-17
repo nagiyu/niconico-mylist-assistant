@@ -60,7 +60,7 @@ def lambda_handler(event, context):
         id_list = data.get("id_list")
         subscription_json = data.get("subscription")
         title = data.get("title", "")
-        action = data.get("action")  # New field to distinguish delete or register
+        action = data.get("action", "")  # New field to distinguish delete or register
     else:
         email = None
         encrypted_password = None
@@ -118,12 +118,6 @@ def lambda_handler(event, context):
                 "statusCode": 500,
                 "body": json.dumps({"error": str(e)})
             }
-
-    else:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": "Invalid action"})
-        }
 
     # 復号処理
     try:
