@@ -60,7 +60,7 @@ def lambda_handler(event, context):
         id_list = data.get("id_list")
         subscription_json = data.get("subscription")
         title = data.get("title", "")
-        action = data.get("action", "")  # New field to distinguish delete or register
+        action = data.get("action")  # New field to distinguish delete or register
     else:
         email = None
         encrypted_password = None
@@ -74,50 +74,6 @@ def lambda_handler(event, context):
             "statusCode": 400,
             "body": json.dumps({"error": "Missing 'email', 'password', or 'id_list' in request body"})
         }
-
-    # Decrypt password
-    try:
-        key = base64.b64decode(os.environ["ENCRYPTION_KEY"])
-        nonce = base64.b64decode(data.get("nonce"))
-        aesgcm = AESGCM(key)
-        password = aesgcm.decrypt(nonce, base64.b64decode(encrypted_password), None).decode("utf-8")
-    except Exception as e:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": "Invalid password encryption"})
-        }
-
-    if action == "delete":
-        # マイリスト削除処理
-        try:
-            driver = regist.selenium_helper.create_chrome_driver()
-            driver.set_window_size(1366, 768)
-            regist.login(driver, email, password)
-            regist.remove_all_mylist(driver)
-            driver.quit()
-            return {
-                "statusCode": 200,
-                "body": json.dumps({"message": "Mylist deleted successfully"})
-            }
-        except Exception as e:
-            return {
-                "statusCode": 500,
-                "body": json.dumps({"error": str(e)})
-            }
-
-    elif action == "register":
-        # マイリスト登録処理
-        try:
-            failed_id_list = regist.regist(email, password, id_list, title)
-            return {
-                "statusCode": 200,
-                "body": json.dumps({"failed_id_list": failed_id_list})
-            }
-        except Exception as e:
-            return {
-                "statusCode": 500,
-                "body": json.dumps({"error": str(e)})
-            }
 
     # 復号処理
     try:
@@ -135,18 +91,40 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "Failed to decrypt password", "detail": str(e)})
         }
 
-    # 登録処理実行
-    failed_id_list = regist.regist(email, password, id_list, title)
-    
-    # プッシュ通知の送信
-    if subscription_json:
+    if action == "delete_and_create":
+        # マイリスト削除処理
         try:
-            send_push_notification(subscription_json, failed_id_list)
-        except Exception as e:
-            print(f"Failed to send push notification: {e}")
-            # 通知送信失敗は処理全体を失敗させない
+            regist.delete_and_create_mylist(email, password, title)
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"failed_id_list": failed_id_list})
-    }
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "Mylist deleted and created successfully"})
+            }
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"error": str(e)})
+            }
+
+    elif action == "register":
+        # マイリスト登録処理
+        try:
+            failed_id_list = regist.regist(email, password, id_list)
+    
+            # プッシュ通知の送信
+            if subscription_json:
+                try:
+                    send_push_notification(subscription_json, failed_id_list)
+                except Exception as e:
+                    print(f"Failed to send push notification: {e}")
+                    # 通知送信失敗は処理全体を失敗させない
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"failed_id_list": failed_id_list})
+            }
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"error": str(e)})
+            }

@@ -76,88 +76,19 @@ def add_videos_to_mylist(driver, id_list):
     return failed_id_list
 
 
-
-def distribute_id_list(id_list, n):
-    """指定された数のスレッドにIDリストを分割する"""
-    chunks = [[] for _ in range(n)]
-
-    for i, item in enumerate(id_list):
-        chunks[i % n].append(item)
-
-    return chunks
-
-
-def process_regist(email, password, id_list, max_retries=3):
-    retry_count = 0
-    remaining_ids = id_list
-    failed_id_list = []
-
-    while retry_count < max_retries and remaining_ids:
-        driver = selenium_helper.create_chrome_driver()
-        driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
-        login(driver, email, password)
-        try:
-            failed_id_list = add_videos_to_mylist(driver, remaining_ids)
-            driver.quit()
-            # If no failed ids, break early
-            if not failed_id_list:
-                break
-            # Prepare for retry with failed ids
-            remaining_ids = failed_id_list
-            retry_count += 1
-        except Exception:
-            driver.quit()
-            # If driver crashed, retry with remaining ids
-            retry_count += 1
-            continue
-
+def regist(email, password, id_list, max_retries=3):
+    driver = selenium_helper.create_chrome_driver()
+    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
+    login(driver, email, password)
+    failed_id_list = add_videos_to_mylist(driver, id_list)
+    driver.quit()
     return failed_id_list
 
 
-
-
-def regist(email, password, id_list, title: str = None):
-    # マイリスト削除と作成は別メソッドに分割
-    def delete_mylist(email, password):
-        driver = selenium_helper.create_chrome_driver()
-        driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
-        login(driver, email, password)
-        remove_all_mylist(driver)
-        driver.quit()
-
-    def register_mylist(email, password, id_list, title: str = None):
-        driver = selenium_helper.create_chrome_driver()
-        driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
-        login(driver, email, password)
-        create_mylist(driver, title)
-        driver.quit()
-
-        threads = min(MAX_THREADS, len(id_list))
-        id_chunks = distribute_id_list(id_list, threads)
-
-        with ThreadPoolExecutor(max_workers=threads) as executor:
-            # Submit all tasks first, then collect results
-            futures = []
-            for chunk in id_chunks:
-                future = executor.submit(process_regist, email, password, chunk)
-                futures.append(future)
-
-            # Collect results from all futures
-            failed_id_lists = []
-            for future in futures:
-                failed_id_lists.append(future.result())
-
-        # 1つのリストにまとめる
-        failed_id_list = []
-
-        for sublist in failed_id_lists:
-            for video_id in sublist:
-                failed_id_list.append(video_id)
-
-        return failed_id_list
-
-    # 削除処理を先に実行
-    delete_mylist(email, password)
-    # 登録処理を実行
-    return register_mylist(email, password, id_list, title)
-
+def delete_and_create_mylist(email, password, title: str = None):
+    driver = selenium_helper.create_chrome_driver()
+    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
+    login(driver, email, password)
+    remove_all_mylist(driver)
+    create_mylist(driver, title)
+    driver.quit()
