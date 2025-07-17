@@ -4,4 +4,6 @@ export interface IRegisterRequest {
   id_list: string[];
   subscription?: PushSubscription | null;
   title?: string;
+  action?: "delete" | "register";
+
 }

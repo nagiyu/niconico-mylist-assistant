@@ -47,26 +47,25 @@ async function warmupLambda(): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, password, id_list, subscription, title }: IRegisterRequest = await req.json();
+        const { email, password, id_list, subscription, title, action }: IRegisterRequest = await req.json();
 
-        // パスワード暗号化
         const encrypted_password = encryptPassword(password, SHARED_SECRET_KEY);
 
-        // まずLambdaをwarmupする - これが失敗したら処理を停止
-        const warmupSuccess = await warmupLambda();
+        // エンドポイントをactionに応じて切り替え
+        const endpoint = action === "delete" ? DELETE_LAMBDA_ENDPOINT : REGISTER_LAMBDA_ENDPOINT;
+
+        const warmupSuccess = await warmupLambda(endpoint);
         if (!warmupSuccess) {
-            console.error("Lambda warmup failed, cannot proceed with registration");
-            return NextResponse.json({ 
-                error: "サーバーの準備ができていません。しばらく待ってからもう一度お試しください。" 
+            console.error("Lambda warmup failed, cannot proceed with", action);
+            return NextResponse.json({
+                error: "サーバーの準備ができていません。しばらく待ってからもう一度お試しください。"
             }, { status: 503 });
         }
 
-        // Warmup成功後、少し待ってから登録リクエストを送信
-        // 同じLambdaインスタンスが使用される可能性を高める
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Lambda呼び出し（非同期・fire-and-forget）
-        fetch(LAMBDA_ENDPOINT, {
+        // Lambda呼び出し
+        await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -76,12 +75,9 @@ export async function POST(req: NextRequest) {
                 subscription: subscription ? JSON.stringify(subscription) : null,
                 title: title || "",
             }),
-        }).catch((error) => {
-            console.error("Lambda invocation failed:", error);
         });
 
-        // 即座にレスポンスを返す（処理は非同期で続行）
-        return NextResponse.json({ message: "登録処理を開始しました。完了時に通知をお送りします。" }, { status: 202 });
+        return NextResponse.json({ message: `${action}処理を開始しました。完了時に通知をお送りします。` }, { status: 202 });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
