@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         // 識別子を生成
         const uuid = crypto.randomUUID();
 
-        chunks.forEach((chunk, index) => {
+        chunks.forEach(async (chunk, index) => {
             // まずLambdaをwarmupする - これが失敗したら処理を停止
             const warmupSuccess = await warmupLambda();
             if (!warmupSuccess) {
