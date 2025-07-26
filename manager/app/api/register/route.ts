@@ -94,7 +94,19 @@ export async function POST(req: NextRequest) {
         // 識別子を生成
         const uuid = crypto.randomUUID();
 
-        chunks.forEach((chunk, index) => {
+        chunks.forEach(async (chunk, index) => {
+            // まずLambdaをwarmupする - これが失敗したら処理を停止
+            const warmupSuccess = await warmupLambda();
+            if (!warmupSuccess) {
+                console.error("Lambda warmup failed, cannot proceed with registration");
+                return NextResponse.json({ 
+                    error: "サーバーの準備ができていません。しばらく待ってからもう一度お試しください。" 
+                }, { status: 503 });
+            }
+    
+            // Warmup成功後、少し待つ
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             fetch(LAMBDA_ENDPOINT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
