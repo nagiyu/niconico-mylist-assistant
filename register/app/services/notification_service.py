@@ -41,7 +41,7 @@ class NotificationService:
                     "subscription": subscription
                 },
                 headers={"Content-Type": "application/json"},
-                timeout=10
+                timeout=30
             )
             
             if response.status_code == 200:
