@@ -59,14 +59,15 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "Missing 'email', 'password', or 'id_list' in request body"})
         }
 
-    # Decrypt password
-    try:
-        password = AuthService.decrypt_password(encrypted_password)
-    except Exception as e:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": "Failed to decrypt password", "detail": str(e)})
-        }
+    # Decrypt password only for non-chain actions
+    if action != "chain_register":
+        try:
+            password = AuthService.decrypt_password(encrypted_password)
+        except Exception as e:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Failed to decrypt password", "detail": str(e)})
+            }
 
     # Dispatch to appropriate handler based on action
     if action == "delete_and_create":
@@ -74,8 +75,9 @@ def lambda_handler(event, context):
     elif action == "register":
         return RegisterHandler.handle(email, password, id_list, subscription_json, uuid, chunk_index)
     elif action == "chain_register":
+        # For chain_register, pass encrypted password to avoid re-encryption in chains
         return ChainRegisterHandler.handle(
-            email, password, id_list, subscription_json, title,
+            email, encrypted_password, id_list, subscription_json, title,
             remaining_ids, failed_ids, is_first_request
         )
     else:

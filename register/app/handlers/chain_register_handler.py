@@ -11,7 +11,7 @@ class ChainRegisterHandler(BaseHandler):
     """Handler for chain-based video registration operations"""
     
     @staticmethod
-    def handle(email: str, password: str, id_list: List[str], 
+    def handle(email: str, encrypted_password: str, id_list: List[str], 
                subscription_json: str = None, title: str = "", 
                remaining_ids: List[str] = None, failed_ids: List[str] = None,
                is_first_request: bool = True) -> Dict[str, Any]:
@@ -20,7 +20,7 @@ class ChainRegisterHandler(BaseHandler):
         
         Args:
             email: User email
-            password: Decrypted password
+            encrypted_password: Encrypted password (will be decrypted only when needed)
             id_list: Original list of video IDs (for first request only)
             subscription_json: Push notification subscription data
             title: Title for the mylist
@@ -32,6 +32,10 @@ class ChainRegisterHandler(BaseHandler):
             Lambda response dictionary
         """
         try:
+            # Decrypt password only when needed for actual operations
+            from app.services.auth_service import AuthService
+            password = AuthService.decrypt_password(encrypted_password)
+            
             # Initialize for first request
             if is_first_request:
                 # Step 1: Delete and create mylist
@@ -55,7 +59,7 @@ class ChainRegisterHandler(BaseHandler):
             if remaining_ids:
                 # Chain to next request
                 ChainRegisterHandler._invoke_next_chain(
-                    email, password, subscription_json, title,
+                    email, encrypted_password, subscription_json, title,
                     remaining_ids, failed_ids
                 )
             else:
@@ -81,14 +85,14 @@ class ChainRegisterHandler(BaseHandler):
             return ChainRegisterHandler.create_server_error_response(str(e))
     
     @staticmethod
-    def _invoke_next_chain(email: str, password: str, subscription_json: str,
+    def _invoke_next_chain(email: str, encrypted_password: str, subscription_json: str,
                           title: str, remaining_ids: List[str], failed_ids: List[str]) -> None:
         """
         Invoke the next chain request to continue processing.
         
         Args:
             email: User email
-            password: Password (will be re-encrypted)
+            encrypted_password: Encrypted password (passed through without re-encryption)
             subscription_json: Push notification subscription data
             title: Title for the mylist
             remaining_ids: IDs still to be processed
@@ -97,17 +101,12 @@ class ChainRegisterHandler(BaseHandler):
         try:
             # Get Lambda endpoint from environment
             lambda_endpoint = os.environ.get("REGISTER_LAMBDA_ENDPOINT")
-            shared_secret_key = os.environ.get("SHARED_SECRET_KEY")
             
-            if not lambda_endpoint or not shared_secret_key:
-                print("Missing REGISTER_LAMBDA_ENDPOINT or SHARED_SECRET_KEY, cannot chain request")
+            if not lambda_endpoint:
+                print("Missing REGISTER_LAMBDA_ENDPOINT, cannot chain request")
                 return
             
-            # Re-encrypt password for the next request
-            from app.services.auth_service import AuthService
-            encrypted_password = AuthService.encrypt_password(password, shared_secret_key)
-            
-            # Prepare payload for next chain request
+            # Use the original encrypted password (no need to re-encrypt)
             payload = {
                 "action": "chain_register",
                 "email": email,

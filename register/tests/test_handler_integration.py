@@ -20,10 +20,8 @@ class TestLambdaHandler:
             })
         }
         
-        with patch('app.services.auth_service.AuthService.decrypt_password') as mock_decrypt, \
-             patch('app.handlers.chain_register_handler.ChainRegisterHandler.handle') as mock_handle:
+        with patch('app.handlers.chain_register_handler.ChainRegisterHandler.handle') as mock_handle:
             
-            mock_decrypt.return_value = "decrypted_password"
             mock_handle.return_value = {
                 "statusCode": 200,
                 "body": json.dumps({"message": "success", "is_complete": True})
@@ -31,12 +29,9 @@ class TestLambdaHandler:
             
             result = lambda_handler(event, {})
             
-            # Verify decrypt was called
-            mock_decrypt.assert_called_once_with("encrypted_password")
-            
-            # Verify chain handler was called with correct parameters
+            # Verify chain handler was called with encrypted password (new behavior)
             mock_handle.assert_called_once_with(
-                "test@example.com", "decrypted_password", ["video1", "video2"],
+                "test@example.com", "encrypted_password", ["video1", "video2"],
                 None, "Test Title", None, [], True
             )
             
@@ -72,10 +67,8 @@ class TestLambdaHandler:
             })
         }
         
-        with patch('app.services.auth_service.AuthService.decrypt_password') as mock_decrypt, \
-             patch('app.handlers.chain_register_handler.ChainRegisterHandler.handle') as mock_handle:
+        with patch('app.handlers.chain_register_handler.ChainRegisterHandler.handle') as mock_handle:
             
-            mock_decrypt.return_value = "decrypted_password"
             mock_handle.return_value = {
                 "statusCode": 200,
                 "body": json.dumps({"message": "success", "is_complete": True})
@@ -83,9 +76,9 @@ class TestLambdaHandler:
             
             result = lambda_handler(event, {})
             
-            # Verify chain handler was called with chain parameters
+            # Verify chain handler was called with encrypted password (new behavior)
             mock_handle.assert_called_once_with(
-                "test@example.com", "decrypted_password", None,
+                "test@example.com", "encrypted_password", None,
                 None, "", ["video31", "video32"], ["failed1"], False
             )
             
