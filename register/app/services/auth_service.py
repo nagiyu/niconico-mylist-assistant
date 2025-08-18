@@ -4,7 +4,39 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 class AuthService:
-    """Service for handling authentication and password decryption"""
+    """Service for handling authentication and password encryption/decryption"""
+    
+    @staticmethod
+    def encrypt_password(password: str, base64_key: str) -> str:
+        """
+        Encrypt a password using shared secret key.
+        
+        Args:
+            password: Plain text password to encrypt
+            base64_key: Base64 encoded secret key
+            
+        Returns:
+            Base64 encoded encrypted password
+            
+        Raises:
+            Exception: If encryption fails
+        """
+        try:
+            key = base64.b64decode(base64_key)
+            aesgcm = AESGCM(key)
+            
+            # Generate 12-byte nonce
+            nonce = os.urandom(12)
+            
+            # Encrypt the password
+            ct_and_tag = aesgcm.encrypt(nonce, password.encode("utf-8"), None)
+            
+            # Return base64( nonce + ciphertext + tag )
+            encrypted = base64.b64encode(nonce + ct_and_tag).decode("utf-8")
+            
+            return encrypted
+        except Exception as e:
+            raise Exception(f"Failed to encrypt password: {str(e)}")
     
     @staticmethod
     def decrypt_password(encrypted_password: str) -> str:

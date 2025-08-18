@@ -3,6 +3,7 @@ from app.services.auth_service import AuthService
 from app.handlers.health_check_handler import HealthCheckHandler
 from app.handlers.delete_and_create_handler import DeleteAndCreateHandler
 from app.handlers.register_handler import RegisterHandler
+from app.handlers.chain_register_handler import ChainRegisterHandler
 
 def lambda_handler(event, context):
     # Parse URL from event body (assume JSON)
@@ -22,6 +23,11 @@ def lambda_handler(event, context):
         action = data.get("action")  # New field to distinguish delete or register
         uuid = data.get("uuid", "")
         chunk_index = data.get("chunk_index", "")
+        
+        # Chain register specific fields
+        remaining_ids = data.get("remaining_ids")
+        failed_ids = data.get("failed_ids", [])
+        is_first_request = data.get("is_first_request", True)
     else:
         email = None
         encrypted_password = None
@@ -31,8 +37,23 @@ def lambda_handler(event, context):
         action = None
         uuid = None
         chunk_index = None
+        remaining_ids = None
+        failed_ids = []
+        is_first_request = True
 
-    if not email or not encrypted_password or not id_list:
+    # For chain_register, we need either id_list (first request) or remaining_ids (chain request)
+    if action == "chain_register":
+        if not email or not encrypted_password:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Missing 'email' or 'password' in request body"})
+            }
+        if not id_list and not remaining_ids:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Missing 'id_list' or 'remaining_ids' in request body"})
+            }
+    elif not email or not encrypted_password or not id_list:
         return {
             "statusCode": 400,
             "body": json.dumps({"error": "Missing 'email', 'password', or 'id_list' in request body"})
@@ -52,6 +73,11 @@ def lambda_handler(event, context):
         return DeleteAndCreateHandler.handle(email, password, title)
     elif action == "register":
         return RegisterHandler.handle(email, password, id_list, subscription_json, uuid, chunk_index)
+    elif action == "chain_register":
+        return ChainRegisterHandler.handle(
+            email, password, id_list, subscription_json, title,
+            remaining_ids, failed_ids, is_first_request
+        )
     else:
         return {
             "statusCode": 400,
