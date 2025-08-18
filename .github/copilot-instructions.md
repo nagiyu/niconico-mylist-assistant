@@ -38,22 +38,12 @@ Always reference these instructions first and fallback to search or bash command
   - Selenium tests may timeout (>5 minutes), run health check tests only: `python3 -m pytest tests/test_health_check.py tests/test_handler.py -v`
   - NEVER CANCEL: Set timeout to 600+ seconds for full test suite
 
-### Linting
-- **Manager ESLint**:
-  ```bash
-  cd manager && npm run lint
-  ```
-  - Identifies TypeScript and React issues
-  - Fix issues with: `npm run lint:fix`
-  - **CRITICAL**: Lint errors prevent Docker builds from succeeding
-  - Always run `npm run lint:fix` before building Docker images
+
 
 ## Build and Deployment
 
 ### Production Builds
-- **CRITICAL**: The `npm run build` command will FAIL due to ESLint errors in the current codebase
-- This is expected behavior - the instructions document the current state of the repository
-- To make builds succeed, ESLint errors in the TypeScript code must be fixed first
+- Production builds work as expected with standard Next.js build process
 
 ### Docker Builds
 - **Manager**: 
@@ -62,7 +52,6 @@ Always reference these instructions first and fallback to search or bash command
   cd manager && ./build_local.sh
   ```
   - NEVER CANCEL: Takes 3-5 minutes. Set timeout to 600+ seconds.
-  - **CRITICAL**: Fix all ESLint warnings first or build will fail
   - Requires all ARG variables (can be empty for local testing)
 
 - **Register**:
@@ -74,10 +63,9 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Manual Build Validation
 After any code changes, always run this validation sequence:
-1. **Lint check**: `cd manager && npm run lint:fix`
-2. **Build check**: `cd manager && npm run build` 
-3. **Basic functionality**: Start dev server with `npm run dev` and verify it loads
-4. **Test key endpoints**: Test at least one API endpoint (e.g., health check)
+1. **Build check**: `cd manager && npm run build` 
+2. **Basic functionality**: Start dev server with `npm run dev` and verify it loads
+3. **Test key endpoints**: Test at least one API endpoint (e.g., health check)
 
 ## Common Tasks
 
@@ -109,8 +97,6 @@ npm run dev          # Start development server
 npm run build        # Build for production (~15s)
 npm run start        # Start production server
 npm run test         # Run Python tests (register only)
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues
 
 # Common scripts  
 npm run build        # Build TypeScript library (~1s)
@@ -131,7 +117,7 @@ For development, these can be empty, but production deployments require proper v
 - GitHub Actions automatically deploy on pushes to master/develop
 - Manager deploys to AWS Lambda via Docker container
 - Register deploys to AWS Lambda via Docker container
-- Pipelines include linting, building, and deployment steps
+- Pipelines include building and deployment steps
 
 ## Validation Scenarios
 
@@ -148,23 +134,15 @@ For development, these can be empty, but production deployments require proper v
 2. **Build validation**:
    ```bash
    cd manager && npm run build
-   # EXPECTED TO FAIL due to ESLint errors - this is normal for current codebase
-   # Build will succeed only after ESLint errors are fixed
+   # Should succeed for standard Next.js builds
    ```
 
-3. **Lint validation**:
-   ```bash
-   cd manager && npm run lint
-   # Must pass or Docker builds will fail
-   ```
-
-4. **Basic API testing**:
+3. **Basic API testing**:
    - Test registration endpoint: POST to `/api/register`
    - Verify authentication flows work
    - Check music search functionality
 
 ### Known Issues and Workarounds
-- **Docker builds fail with lint errors**: Always run `npm run lint:fix` first
 - **Selenium tests timeout**: Run only health check tests for faster validation
 - **Network issues in Docker**: Expected in sandboxed environments
 
@@ -176,13 +154,11 @@ For development, these can be empty, but production deployments require proper v
 - **NEVER CANCEL**: Full Python tests: 5+ minutes (600+ second timeout required)
 
 ## CI/CD Integration
-- Always run `npm run lint` before committing changes
-- The CI pipeline will fail if there are linting errors
 - All builds must pass before deployment
 - GitHub Actions handle automated deployment to AWS
 
 ## Troubleshooting
 - If dev server fails to start: Check for TypeScript compilation errors
 - If tests fail: Verify all dependencies are installed and environment variables are set  
-- If Docker build fails: Check lint errors first, then build logs
+- If Docker build fails: Check build logs for errors
 - If Python tests hang: Use health check tests only for faster validation

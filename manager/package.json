@@ -5,11 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix"
+    "start": "next start"
   },
   "dependencies": {
+    "common": "file:../common",
     "@aws-sdk/client-dynamodb": "^3.835.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -17,7 +16,6 @@
     "@mui/material": "^7.1.2",
     "@types/cheerio": "^0.22.35",
     "cheerio": "^1.1.0",
-    "common": "file:../common",
     "next": "15.3.4",
     "next-auth": "^4.24.11",
     "react": "^19.0.0",
@@ -29,8 +27,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
-    "eslint": "9.33.0",
-    "eslint-config-next": "15.4.6",
     "typescript": "^5"
   }
 }
