@@ -64,66 +64,25 @@ export async function POST(req: NextRequest) {
         // Warmup成功後、少し待つ
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // 1. まず delete_and_create アクションを送信
-        const deleteResponse = await fetch(LAMBDA_ENDPOINT, {
+        // Send single chain_register request with all id_list
+        const response = await fetch(LAMBDA_ENDPOINT, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                action: "delete_and_create",
+                action: "chain_register",
                 email,
                 password: encrypted_password,
                 id_list,
                 subscription: subscription ? JSON.stringify(subscription) : null,
                 title: title || "",
+                is_first_request: true
             }),
         });
 
-        if (!deleteResponse.ok) {
-            console.error("Delete and create action failed", await deleteResponse.text());
-            return NextResponse.json({ error: "削除処理に失敗しました。" }, { status: 500 });
+        if (!response.ok) {
+            console.error("Chain register action failed", await response.text());
+            return NextResponse.json({ error: "登録処理の開始に失敗しました。" }, { status: 500 });
         }
-
-        // 2. id_list を3等分
-        const chunkSize = Math.ceil(id_list.length / 3);
-        const chunks = [];
-        for (let i = 0; i < 3; i++) {
-            chunks.push(id_list.slice(i * chunkSize, (i + 1) * chunkSize));
-        }
-
-        // 3. 3つのリクエストを並列で fire-and-forget
-        // 識別子を生成
-        const uuid = crypto.randomUUID();
-
-        chunks.forEach(async (chunk, index) => {
-            // まずLambdaをwarmupする - これが失敗したら処理を停止
-            const warmupSuccess = await warmupLambda();
-            if (!warmupSuccess) {
-                console.error("Lambda warmup failed, cannot proceed with registration");
-                return NextResponse.json({ 
-                    error: "サーバーの準備ができていません。しばらく待ってからもう一度お試しください。" 
-                }, { status: 503 });
-            }
-    
-            // Warmup成功後、少し待つ
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            fetch(LAMBDA_ENDPOINT, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "register",
-                    email,
-                    password: encrypted_password,
-                    id_list: chunk,
-                    subscription: subscription ? JSON.stringify(subscription) : null,
-                    title: title || "",
-                    uuid: uuid, // 識別子を付与
-                    chunk_index: index, // チャンクのインデックスを付与
-                }),
-            }).catch((error) => {
-                console.error("Register action failed:", error);
-            });
-        });
 
         // 即座にレスポンスを返す（処理は非同期で続行）
         return NextResponse.json({ message: "登録処理を開始しました。完了時に通知をお送りします。" }, { status: 202 });
