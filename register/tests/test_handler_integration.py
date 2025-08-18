@@ -32,7 +32,7 @@ class TestLambdaHandler:
             # Verify chain handler was called with encrypted password (new behavior)
             mock_handle.assert_called_once_with(
                 "test@example.com", "encrypted_password", ["video1", "video2"],
-                None, "Test Title", None, [], True
+                None, "Test Title", None, [], True, False
             )
             
             # Verify response
@@ -79,7 +79,7 @@ class TestLambdaHandler:
             # Verify chain handler was called with encrypted password (new behavior)
             mock_handle.assert_called_once_with(
                 "test@example.com", "encrypted_password", None,
-                None, "", ["video31", "video32"], ["failed1"], False
+                None, "", ["video31", "video32"], ["failed1"], False, False
             )
             
             assert result["statusCode"] == 200
