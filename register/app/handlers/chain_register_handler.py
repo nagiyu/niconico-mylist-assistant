@@ -138,8 +138,7 @@ class ChainRegisterHandler(BaseHandler):
             requests.post(
                 lambda_endpoint,
                 json=payload,
-                headers={"Content-Type": "application/json"},
-                timeout=5  # Very short timeout for fire-and-forget
+                headers={"Content-Type": "application/json"}
             )
             
             print(f"Invoked delete and create chain request with {len(id_list)} videos")
@@ -186,8 +185,7 @@ class ChainRegisterHandler(BaseHandler):
             requests.post(
                 lambda_endpoint,
                 json=payload,
-                headers={"Content-Type": "application/json"},
-                timeout=5  # Very short timeout for fire-and-forget
+                headers={"Content-Type": "application/json"}
             )
             
             print(f"Invoked next chain request with {len(remaining_ids)} remaining IDs")
