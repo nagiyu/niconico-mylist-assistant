@@ -43,6 +43,7 @@ jobs:
           --build-arg S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }} \
           --build-arg SHARED_SECRET_KEY=${{ secrets.SHARED_SECRET_KEY }} \
           --build-arg NOTIFICATION_API_ENDPOINT=${{ secrets.NOTIFICATION_API_ENDPOINT }} \
+          --build-arg REGISTER_LAMBDA_ENDPOINT=${{ secrets.REGISTER_LAMBDA_ENDPOINT }} \
           -t ${{ secrets.REGISTER_PROJECT_NAME }} .
         docker tag ${{ secrets.REGISTER_PROJECT_NAME }}:latest ${{ secrets.AWS_REGISTER_REPOSITORY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.REGISTER_PROJECT_NAME }}:latest
         docker push ${{ secrets.AWS_REGISTER_REPOSITORY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.REGISTER_PROJECT_NAME }}:latest
