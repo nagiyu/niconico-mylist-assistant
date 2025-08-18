@@ -105,7 +105,7 @@ class ChainRegisterHandler(BaseHandler):
     def _invoke_delete_and_create_chain(email: str, encrypted_password: str, id_list: List[str],
                                        subscription_json: str, title: str) -> None:
         """
-        Invoke the delete and create chain request.
+        Invoke the delete and create chain request (fire-and-forget).
         
         Args:
             email: User email
@@ -134,18 +134,15 @@ class ChainRegisterHandler(BaseHandler):
                 "is_delete_and_create_request": True
             }
             
-            # Invoke Lambda asynchronously
-            response = requests.post(
+            # Fire-and-forget invocation
+            requests.post(
                 lambda_endpoint,
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=30  # Short timeout since this is fire-and-forget
+                timeout=5  # Very short timeout for fire-and-forget
             )
             
-            if response.status_code not in [200, 202]:
-                print(f"Delete and create chain request failed with status {response.status_code}: {response.text}")
-            else:
-                print(f"Successfully chained delete and create request with {len(id_list)} videos")
+            print(f"Invoked delete and create chain request with {len(id_list)} videos")
                 
         except Exception as e:
             print(f"Failed to invoke delete and create chain request: {e}")
@@ -155,7 +152,7 @@ class ChainRegisterHandler(BaseHandler):
     def _invoke_next_chain(email: str, encrypted_password: str, subscription_json: str,
                           title: str, remaining_ids: List[str], failed_ids: List[str]) -> None:
         """
-        Invoke the next chain request to continue processing.
+        Invoke the next chain request to continue processing (fire-and-forget).
         
         Args:
             email: User email
@@ -185,18 +182,15 @@ class ChainRegisterHandler(BaseHandler):
                 "is_first_request": False
             }
             
-            # Invoke Lambda asynchronously
-            response = requests.post(
+            # Fire-and-forget invocation
+            requests.post(
                 lambda_endpoint,
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=30  # Short timeout since this is fire-and-forget
+                timeout=5  # Very short timeout for fire-and-forget
             )
             
-            if response.status_code not in [200, 202]:
-                print(f"Chain request failed with status {response.status_code}: {response.text}")
-            else:
-                print(f"Successfully chained next request with {len(remaining_ids)} remaining IDs")
+            print(f"Invoked next chain request with {len(remaining_ids)} remaining IDs")
                 
         except Exception as e:
             print(f"Failed to invoke next chain request: {e}")

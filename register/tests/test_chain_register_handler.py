@@ -202,14 +202,9 @@ class TestChainRegisterHandler:
             assert "Decryption failed" in response_data["error"]
     
     def test_invoke_delete_and_create_chain_success(self):
-        """Test successful invocation of delete and create chain"""
+        """Test successful invocation of delete and create chain (fire-and-forget)"""
         with patch('requests.post') as mock_post, \
              patch.dict(os.environ, {'REGISTER_LAMBDA_ENDPOINT': 'https://test.lambda.endpoint'}):
-            
-            # Setup mock response
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_post.return_value = mock_response
             
             # Test data
             email = "test@example.com"
@@ -229,7 +224,7 @@ class TestChainRegisterHandler:
             
             assert args[0] == 'https://test.lambda.endpoint'
             assert kwargs['headers'] == {"Content-Type": "application/json"}
-            assert kwargs['timeout'] == 30
+            assert kwargs['timeout'] == 5  # Updated to 5 for fire-and-forget
             
             payload = kwargs['json']
             assert payload['action'] == 'chain_register'
