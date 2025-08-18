@@ -30,14 +30,6 @@ Always reference these instructions first and fallback to search or bash command
   - Takes ~2 seconds to start
 
 ### Testing
-- **Manager (TypeScript/Jest)**: 
-  ```bash
-  cd manager && npm test
-  ```
-  - Jest configured with Next.js integration
-  - Tests may have environment setup issues but framework works
-  - Takes ~5-10 seconds to run
-  
 - **Register (Python/pytest)**:
   ```bash
   cd register && python3 -m pytest tests/ -v
@@ -101,7 +93,6 @@ niconico-mylist-assistant/
 │   │   ├── api/              # API routes (register, music, auth)
 │   │   ├── components/       # React components
 │   │   └── page.tsx          # Main page
-│   ├── tests/                # Jest tests
 │   ├── public/               # Static assets
 │   └── package.json          # Next.js app dependencies
 └── register/                  # Python Lambda function
@@ -117,7 +108,7 @@ niconico-mylist-assistant/
 npm run dev          # Start development server
 npm run build        # Build for production (~15s)
 npm run start        # Start production server
-npm run test         # Run Jest tests
+npm run test         # Run Python tests (register only)
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix ESLint issues
 
@@ -174,7 +165,6 @@ For development, these can be empty, but production deployments require proper v
 
 ### Known Issues and Workarounds
 - **Docker builds fail with lint errors**: Always run `npm run lint:fix` first
-- **Jest tests may fail**: Test infrastructure works but some tests have environment issues
 - **Selenium tests timeout**: Run only health check tests for faster validation
 - **Network issues in Docker**: Expected in sandboxed environments
 
