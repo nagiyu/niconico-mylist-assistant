@@ -28,6 +28,7 @@ def lambda_handler(event, context):
         remaining_ids = data.get("remaining_ids")
         failed_ids = data.get("failed_ids", [])
         is_first_request = data.get("is_first_request", True)
+        is_delete_and_create_request = data.get("is_delete_and_create_request", False)
     else:
         email = None
         encrypted_password = None
@@ -40,6 +41,7 @@ def lambda_handler(event, context):
         remaining_ids = None
         failed_ids = []
         is_first_request = True
+        is_delete_and_create_request = False
 
     # For chain_register, we need either id_list (first request) or remaining_ids (chain request)
     if action == "chain_register":
@@ -78,7 +80,7 @@ def lambda_handler(event, context):
         # For chain_register, pass encrypted password to avoid re-encryption in chains
         return ChainRegisterHandler.handle(
             email, encrypted_password, id_list, subscription_json, title,
-            remaining_ids, failed_ids, is_first_request
+            remaining_ids, failed_ids, is_first_request, is_delete_and_create_request
         )
     else:
         return {
