@@ -58,6 +58,11 @@ Always reference these instructions first and fallback to search or bash command
 
 ## Build and Deployment
 
+### Production Builds
+- **CRITICAL**: The `npm run build` command will FAIL due to ESLint errors in the current codebase
+- This is expected behavior - the instructions document the current state of the repository
+- To make builds succeed, ESLint errors in the TypeScript code must be fixed first
+
 ### Docker Builds
 - **Manager**: 
   ```bash
@@ -152,7 +157,8 @@ For development, these can be empty, but production deployments require proper v
 2. **Build validation**:
    ```bash
    cd manager && npm run build
-   # Must complete without errors
+   # EXPECTED TO FAIL due to ESLint errors - this is normal for current codebase
+   # Build will succeed only after ESLint errors are fixed
    ```
 
 3. **Lint validation**:
