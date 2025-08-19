@@ -77,12 +77,51 @@ def add_videos_to_mylist(driver, id_list):
 
 
 def regist(email, password, id_list, max_retries=3):
-    driver = selenium_helper.create_chrome_driver()
-    driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
-    login(driver, email, password)
-    failed_id_list = add_videos_to_mylist(driver, id_list)
-    driver.quit()
-    return failed_id_list
+    """
+    Register videos to mylist with retry logic for selenium failures.
+    
+    Args:
+        email: User email
+        password: User password
+        id_list: List of video IDs to register
+        max_retries: Maximum number of retry attempts
+        
+    Returns:
+        List of video IDs that failed to register
+    """
+    last_failed_list = id_list
+    
+    for attempt in range(max_retries):
+        driver = None
+        try:
+            driver = selenium_helper.create_chrome_driver()
+            driver.set_window_size(1366, 768)  # Optimized smaller window size for headless mode
+            login(driver, email, password)
+            failed_id_list = add_videos_to_mylist(driver, id_list)
+            driver.quit()
+            
+            # If we have success (some or all videos registered), return the result
+            if len(failed_id_list) < len(id_list) or attempt == max_retries - 1:
+                return failed_id_list
+                
+            # If all videos failed and we have more retries, continue
+            last_failed_list = failed_id_list
+            
+        except Exception as e:
+            if driver:
+                try:
+                    driver.quit()
+                except:
+                    pass
+            
+            # If this was the last attempt, re-raise the exception
+            if attempt == max_retries - 1:
+                raise e
+            
+            print(f"Attempt {attempt + 1} failed with exception, retrying...")
+    
+    # Return the last failed list if all retries exhausted
+    return last_failed_list
 
 
 def delete_and_create_mylist(email, password, title: str = None):

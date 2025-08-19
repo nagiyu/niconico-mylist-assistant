@@ -5,6 +5,8 @@ import {
   DialogActions,
   Button,
   TextField,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 import DialogBase from "./DialogBase";
 import { useState, useEffect } from "react";
@@ -16,6 +18,7 @@ interface AutoDialogProps {
     onClose: () => void;
     onAuto: (params: { email: string; password: string; mylistTitle: string; count: number }) => void;
     rowsCount: number; // Number of rows for default count
+    loading?: boolean; // Loading state for registration request
 }
 
 export default function AutoDialog({
@@ -23,6 +26,7 @@ export default function AutoDialog({
     onClose,
     onAuto,
     rowsCount,
+    loading = false,
 }: AutoDialogProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -95,13 +99,20 @@ export default function AutoDialog({
             title="自動処理"
             onClose={onClose}
             onConfirm={handleAuto}
-            confirmText="実行"
+            confirmText={loading ? "処理中..." : "実行"}
             confirmColor="secondary"
             disabled={
+                loading ||
                 hasValidationErrors(errors) ||
                 !email.trim() || !password.trim() || !mylistTitle.trim() || count < 1 || count > maxCount
             }
         >
+            {loading && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    自動登録処理を実行中です...
+                </Box>
+            )}
             <TextField
                 margin="dense"
                 label="Email"
@@ -116,6 +127,7 @@ export default function AutoDialog({
                 }}
                 error={!!errors.email}
                 helperText={errors.email}
+                disabled={loading}
             />
             <TextField
                 margin="dense"
@@ -131,6 +143,7 @@ export default function AutoDialog({
                 }}
                 error={!!errors.password}
                 helperText={errors.password}
+                disabled={loading}
             />
             <TextField
                 margin="dense"
@@ -145,6 +158,7 @@ export default function AutoDialog({
                 }}
                 error={!!errors.mylistTitle}
                 helperText={errors.mylistTitle}
+                disabled={loading}
             />
             <TextField
                 margin="dense"
@@ -161,6 +175,7 @@ export default function AutoDialog({
                 inputProps={{ min: 1, max: maxCount }}
                 error={!!errors.count}
                 helperText={errors.count}
+                disabled={loading}
             />
         </DialogBase>
     );

@@ -65,6 +65,7 @@ export default function SignedInContent({ session }: { session: Session }) {
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
     const [autoDialogOpen, setAutoDialogOpen] = useState(false);
+    const [autoDialogLoading, setAutoDialogLoading] = useState(false);
     const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
     const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
@@ -525,7 +526,12 @@ export default function SignedInContent({ session }: { session: Session }) {
 
             <AutoDialog
                 open={autoDialogOpen}
-                onClose={() => setAutoDialogOpen(false)}
+                onClose={() => {
+                    if (!autoDialogLoading) {
+                        setAutoDialogOpen(false);
+                    }
+                }}
+                loading={autoDialogLoading}
                 rowsCount={rows.filter(r => !r.skip).length}
                 onAuto={async ({ email, password, mylistTitle, count }) => {
                     // rowsからskip=falseのmusic_idをランダム抽出
@@ -536,6 +542,7 @@ export default function SignedInContent({ session }: { session: Session }) {
                         .map(({ value }) => value);
                     const id_list = shuffled.slice(0, count).map(r => r.music_id);
 
+                    setAutoDialogLoading(true);
                     try {
                         const reqBody: IRegisterRequest = { email, password, id_list, subscription, title: mylistTitle };
                         const res = await fetch("/api/register", {
@@ -551,8 +558,10 @@ export default function SignedInContent({ session }: { session: Session }) {
                         }
                     } catch (e) {
                         alert("自動処理エラー: " + e);
+                    } finally {
+                        setAutoDialogLoading(false);
+                        setAutoDialogOpen(false);
                     }
-                    setAutoDialogOpen(false);
                 }}
             />
             <SettingsDialog
