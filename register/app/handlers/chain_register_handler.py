@@ -134,11 +134,12 @@ class ChainRegisterHandler(BaseHandler):
                 "is_delete_and_create_request": True
             }
             
-            # Fire-and-forget invocation
+            # Fire-and-forget invocation with timeout
             requests.post(
                 lambda_endpoint,
                 json=payload,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
+                timeout=5  # 5 second timeout for fire-and-forget requests
             )
             
             print(f"Invoked delete and create chain request with {len(id_list)} videos")
@@ -181,11 +182,12 @@ class ChainRegisterHandler(BaseHandler):
                 "is_first_request": False
             }
             
-            # Fire-and-forget invocation
+            # Fire-and-forget invocation with timeout
             requests.post(
                 lambda_endpoint,
                 json=payload,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
+                timeout=5  # 5 second timeout for fire-and-forget requests
             )
             
             print(f"Invoked next chain request with {len(remaining_ids)} remaining IDs")
