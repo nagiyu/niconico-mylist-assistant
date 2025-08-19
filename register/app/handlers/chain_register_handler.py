@@ -33,10 +33,6 @@ class ChainRegisterHandler(BaseHandler):
             Lambda response dictionary
         """
         try:
-            # Decrypt password only when needed for actual operations
-            from app.services.auth_service import AuthService
-            password = AuthService.decrypt_password(encrypted_password)
-            
             # Handle first request from Manager - return immediately and chain to delete/create
             if is_first_request:
                 # Chain to delete and create request immediately
@@ -52,6 +48,10 @@ class ChainRegisterHandler(BaseHandler):
                         "total_videos": len(id_list) if id_list else 0
                     }
                 )
+            
+            # Decrypt password only when needed for actual operations
+            from app.services.auth_service import AuthService
+            password = AuthService.decrypt_password(encrypted_password)
             
             # Handle delete and create request
             if is_delete_and_create_request:

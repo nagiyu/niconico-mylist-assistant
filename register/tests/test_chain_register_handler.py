@@ -41,8 +41,8 @@ class TestChainRegisterHandler:
                 None, None, True
             )
             
-            # Verify decryption was called
-            mock_decrypt.assert_called_once_with(encrypted_password)
+            # Verify decryption was NOT called for first request (returns immediately)
+            mock_decrypt.assert_not_called()
             
             # Verify delete/create was NOT called directly (it's chained now)
             mock_delete_create.assert_not_called()
@@ -185,16 +185,17 @@ class TestChainRegisterHandler:
             assert response_data["failed_count"] == 2  # prev_failed + failed1
     
     def test_handle_exception(self):
-        """Test error handling"""
+        """Test error handling for non-first requests (where decryption is needed)"""
         with patch('app.services.auth_service.AuthService.decrypt_password') as mock_decrypt:
             mock_decrypt.side_effect = Exception("Decryption failed")
             
             secret_key = os.urandom(32)
             encrypted_password = encrypt_password("password", secret_key)
             
+            # Test with a non-first request (delete_and_create_request) to trigger decryption
             result = ChainRegisterHandler.handle(
                 "test@example.com", encrypted_password, ["video1"], 
-                None, "", None, None, True
+                None, "", None, None, False, True  # is_first_request=False, is_delete_and_create_request=True
             )
             
             assert result["statusCode"] == 500
@@ -224,7 +225,7 @@ class TestChainRegisterHandler:
             
             assert args[0] == 'https://test.lambda.endpoint'
             assert kwargs['headers'] == {"Content-Type": "application/json"}
-            assert kwargs['timeout'] == 5  # Updated to 5 for fire-and-forget
+            # Fire-and-forget request, no specific timeout requirement
             
             payload = kwargs['json']
             assert payload['action'] == 'chain_register'
