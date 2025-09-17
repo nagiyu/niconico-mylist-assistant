@@ -11,21 +11,44 @@ export interface VideoInfoResult {
 
 export async function getVideoInfo(videoId: string): Promise<VideoInfoResult> {
   try {
-    // Niconico APIから情報を取得
-    const apiUrl = `https://ext.nicovideo.jp/api/getthumbinfo/${videoId}`;
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
+    // Validate video ID format
+    if (!videoId || !/^[a-z]{2}\d+$/.test(videoId)) {
+      console.warn(`[VIDEO_INFO] Invalid video ID format: ${videoId}`);
       return {
         success: false,
-        errorMessage: "ERROR: Failure getting info."
+        errorMessage: "ERROR: Invalid video ID format."
+      };
+    }
+
+    // Niconico APIから情報を取得
+    const apiUrl = `https://ext.nicovideo.jp/api/getthumbinfo/${videoId}`;
+    console.log(`[VIDEO_INFO] Fetching info for ${videoId} from ${apiUrl}`);
+    
+    const response = await fetch(apiUrl, {
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(10000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; niconico-mylist-assistant/1.0)'
+      }
+    });
+
+    console.log(`[VIDEO_INFO] Response for ${videoId}: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      const errorMessage = `ERROR: HTTP ${response.status} - ${response.statusText}`;
+      console.error(`[VIDEO_INFO] ${errorMessage} for video ${videoId}`);
+      return {
+        success: false,
+        errorMessage: errorMessage
       };
     }
 
     const xmlText = await response.text();
+    console.log(`[VIDEO_INFO] Received XML length for ${videoId}: ${xmlText.length} characters`);
     
     // XMLパースエラーをチェック
     if (!xmlText || xmlText.trim() === "") {
+      console.error(`[VIDEO_INFO] Empty response for video ${videoId}`);
       return {
         success: false,
         errorMessage: "ERROR: Empty response from API."
@@ -34,9 +57,13 @@ export async function getVideoInfo(videoId: string): Promise<VideoInfoResult> {
 
     // エラーレスポンスをチェック (XMLに<error>タグが含まれている場合)
     if (xmlText.includes('<error>')) {
+      // Extract specific error message if available
+      const errorMatch = xmlText.match(/<error><description>(.*?)<\/description><\/error>/);
+      const specificError = errorMatch ? errorMatch[1] : "Unknown error";
+      console.warn(`[VIDEO_INFO] API error for ${videoId}: ${specificError}`);
       return {
         success: false,
-        errorMessage: "ERROR: Not Found or Invalid video ID."
+        errorMessage: `ERROR: ${specificError}`
       };
     }
 
@@ -48,6 +75,7 @@ export async function getVideoInfo(videoId: string): Promise<VideoInfoResult> {
     }
     
     if (!titleMatch) {
+      console.error(`[VIDEO_INFO] Could not extract title for ${videoId}. XML snippet: ${xmlText.substring(0, 200)}`);
       return {
         success: false,
         errorMessage: "ERROR: Could not extract title from response."
@@ -55,6 +83,7 @@ export async function getVideoInfo(videoId: string): Promise<VideoInfoResult> {
     }
 
     const title = titleMatch[1];
+    console.log(`[VIDEO_INFO] Successfully extracted title for ${videoId}: "${title}"`);
 
     return {
       success: true,
@@ -63,10 +92,11 @@ export async function getVideoInfo(videoId: string): Promise<VideoInfoResult> {
     };
 
   } catch (error) {
-    console.error("Error fetching video info:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[VIDEO_INFO] Error fetching video info for ${videoId}:`, error);
     return {
       success: false,
-      errorMessage: "ERROR: Network or server error."
+      errorMessage: `ERROR: ${errorMessage}`
     };
   }
 }
