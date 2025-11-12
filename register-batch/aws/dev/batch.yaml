@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS Batch resources for NMA Register Batch (dev) - Fargate
+
+Parameters:
+  TaskExecutionRoleArn:
+    Type: String
+    Description: ARN of the Task Execution Role (from iam stack)
+  TaskRoleArn:
+    Type: String
+    Description: ARN of the Task Role (from iam stack)
+  EcrRepositoryUri:
+    Type: String
+    Description: ECR repository URI (from ecr stack)
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets for Batch Fargate (use public subnets from vpc stack)
+  SecurityGroupIds:
+    Type: List<String>
+    Description: Security group ids for Batch Fargate (from vpc stack)
+  LogGroupName:
+    Type: String
+    Description: CloudWatch Logs group name to use for container logs
+
+Resources:
+  BatchServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: batch.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+      Tags:
+        - Key: Name
+          Value: dev-niconico-mylist-assistant-register-batch-batch-service-role
+      RoleName: dev-niconico-mylist-assistant-register-batch-batch-service-role
+
+  BatchComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole: !GetAtt BatchServiceRole.Arn
+      ComputeResources:
+        Type: FARGATE
+        MaxvCpus: 32
+        Subnets: !Ref SubnetIds
+        SecurityGroupIds: !Ref SecurityGroupIds
+      State: ENABLED
+
+  BatchJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      Priority: 1
+      State: ENABLED
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref BatchComputeEnvironment
+      JobQueueName: dev-niconico-mylist-assistant-register-batch-queue
+
+  BatchJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      Type: container
+      PlatformCapabilities:
+        - FARGATE
+      ContainerProperties:
+        Image: !Sub "${EcrRepositoryUri}:latest"
+        # Fargate resourceRequirements required for vCPU and memory
+        ResourceRequirements:
+          - Type: VCPU
+            Value: "4"
+          - Type: MEMORY
+            Value: "11264"
+        ExecutionRoleArn: !Ref TaskExecutionRoleArn
+        JobRoleArn: !Ref TaskRoleArn
+        NetworkConfiguration:
+          AssignPublicIp: ENABLED
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref LogGroupName
+            awslogs-region: !Ref "AWS::Region"
+            awslogs-stream-prefix: register-batch
+        Environment:
+          - Name: AWS_ACCESS_KEY_ID
+            Value: ""
+          - Name: AWS_SECRET_ACCESS_KEY
+            Value: ""
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref "AWS::Region"
+          - Name: NICONICO_EMAIL
+            Value: ""
+          - Name: NICONICO_PASSWORD
+            Value: ""
+          - Name: NICONICO_ID_LIST
+            Value: ""
+          - Name: NOTIFICATION_API_ENDPOINT
+            Value: ""
+          - Name: PUSH_SUBSCRIPTION
+            Value: ""
+          - Name: S3_BUCKET_NAME
+            Value: ""
+      RetryStrategy:
+        Attempts: 1
+      Timeout:
+        AttemptDurationSeconds: 7200
+      JobDefinitionName: dev-niconico-mylist-assistant-register-batch-jobdef
+
+# To deploy this template, run:
+# aws cloudformation deploy \
+#   --template-file register-batch/aws/dev/batch.yaml \
+#   --stack-name dev-niconico-mylist-assistant-register-batch-batch \
+#   --parameter-overrides \
+#     TaskExecutionRoleArn= \
+#     TaskRoleArn= \
+#     EcrRepositoryUri= \
+#     SubnetIds="\
+#     SecurityGroupIds= \
+#     LogGroupName= \
+#   --capabilities CAPABILITY_NAMED_IAM

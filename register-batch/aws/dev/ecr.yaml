@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECR repository for NMA register-batch.
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: dev-niconico-mylist-assistant-register-batch
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: MUTABLE
+
+Outputs:
+  RepositoryUri:
+    Description: Repository URI
+    Value: !GetAtt Repository.RepositoryUri
+
+# To deploy this template, run:
+# aws cloudformation deploy --template-file register-batch/aws/dev/ecr.yaml --stack-name dev-niconico-mylist-assistant-register-batch-ecr
