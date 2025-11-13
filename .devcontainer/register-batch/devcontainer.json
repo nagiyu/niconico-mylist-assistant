@@ -1,0 +1,43 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "register-batch",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"dockerFile": "Dockerfile",
+	"containerEnv": {
+		"AWS_ACCESS_KEY_ID": "",
+		"AWS_SECRET_ACCESS_KEY": "",
+		"AWS_DEFAULT_REGION": "",
+		"NICONICO_EMAIL": "",
+		"NICONICO_PASSWORD": "",
+		"NICONICO_ID_LIST": "",
+		"NOTIFICATION_API_ENDPOINT": "",
+		"PUSH_SUBSCRIPTION": "",
+		"S3_BUCKET_NAME": ""
+	},
+	"workspaceFolder": "/workspaces/niconico-mylist-assistant/register-batch",
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/aws-cli:1": {}
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "pip install -r requirements.txt",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"saoudrizwan.claude-dev",
+				"donjayamanne.githistory",
+				"eamodio.gitlens",
+				"GitHub.vscode-pull-request-github",
+				"GitHub.copilot",
+				"GitHub.copilot-chat"
+			]
+		}
+	}
+	// Configure tool-specific properties.
+	// "customizations": {},
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

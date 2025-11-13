@@ -3,27 +3,27 @@
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  CircularProgress,
-  TextField,
-  Box,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Pagination,
-  IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    AppBar,
+    Toolbar,
+    Typography,
+    Button,
+    CircularProgress,
+    TextField,
+    Box,
+    Stack,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Pagination,
+    IconButton,
 } from "@mui/material";
 import ClearIcon from '@mui/icons-material/Clear';
 import styles from "../../page.module.css";
@@ -353,14 +353,14 @@ export default function SignedInContent({ session }: { session: Session }) {
                     }}>
                         <Stack spacing={2}>
                             {/* Search term */}
-                            <Box sx={{ 
-                                display: 'flex', 
+                            <Box sx={{
+                                display: 'flex',
                                 flexDirection: { xs: 'column', sm: 'row' },
                                 alignItems: { xs: 'flex-start', sm: 'center' },
                                 gap: { xs: 1, sm: 2 }
                             }}>
-                                <Typography variant="body2" sx={{ 
-                                    fontWeight: 500, 
+                                <Typography variant="body2" sx={{
+                                    fontWeight: 500,
                                     minWidth: { xs: 'auto', sm: '140px' },
                                     textAlign: { xs: 'left', sm: 'left' }
                                 }}>
@@ -388,16 +388,16 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     }}
                                 />
                             </Box>
-                            
+
                             {/* Favorite filter */}
-                            <Box sx={{ 
-                                display: 'flex', 
+                            <Box sx={{
+                                display: 'flex',
                                 flexDirection: { xs: 'column', sm: 'row' },
                                 alignItems: { xs: 'flex-start', sm: 'center' },
                                 gap: { xs: 1, sm: 2 }
                             }}>
-                                <Typography variant="body2" sx={{ 
-                                    fontWeight: 500, 
+                                <Typography variant="body2" sx={{
+                                    fontWeight: 500,
                                     minWidth: { xs: 'auto', sm: '140px' },
                                     textAlign: { xs: 'left', sm: 'left' }
                                 }}>
@@ -416,16 +416,16 @@ export default function SignedInContent({ session }: { session: Session }) {
                                     </Select>
                                 </FormControl>
                             </Box>
-                            
+
                             {/* Skip filter */}
-                            <Box sx={{ 
-                                display: 'flex', 
+                            <Box sx={{
+                                display: 'flex',
                                 flexDirection: { xs: 'column', sm: 'row' },
                                 alignItems: { xs: 'flex-start', sm: 'center' },
                                 gap: { xs: 1, sm: 2 }
                             }}>
-                                <Typography variant="body2" sx={{ 
-                                    fontWeight: 500, 
+                                <Typography variant="body2" sx={{
+                                    fontWeight: 500,
                                     minWidth: { xs: 'auto', sm: '140px' },
                                     textAlign: { xs: 'left', sm: 'left' }
                                 }}>
@@ -544,7 +544,7 @@ export default function SignedInContent({ session }: { session: Session }) {
 
                     setAutoDialogLoading(true);
                     try {
-                        const reqBody: IRegisterRequest = { email, password, id_list, subscription, title: mylistTitle };
+                        const reqBody: IRegisterRequest = { email, password, id_list, subscription: JSON.stringify(subscription), title: mylistTitle };
                         const res = await fetch("/api/register", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
