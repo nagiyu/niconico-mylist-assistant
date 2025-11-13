@@ -1,0 +1,37 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "register-batch"
+    },
+    {
+      "path": "../register",
+      "name": "old"
+    }
+  ],
+  "settings": {
+    "editor.renderWhitespace": "boundary",
+    "[shellscript]": {
+      "editor.tabSize": 2
+    },
+    "[typescript]": {
+      "editor.tabSize": 2
+    },
+    "[jsonc]": {
+      "editor.tabSize": 2
+    },
+    "[javascript]": {
+      "editor.tabSize": 2
+    },
+    "[html]": {
+      "editor.tabSize": 2
+    },
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always"
+    },
+    "editor.formatOnSave": true,
+    "[markdown]": {
+      "editor.tabSize": 2
+    }
+  }
+}
