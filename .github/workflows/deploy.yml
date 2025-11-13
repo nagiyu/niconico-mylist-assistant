@@ -2,9 +2,9 @@ name: Deploy
 
 on:
   push:
-    # branches:
-    #   - master
-    #   - develop
+    branches:
+      - master
+      - develop
   workflow_dispatch:
 
 jobs:
@@ -59,174 +59,174 @@ jobs:
         run: |
           aws lambda update-function-code --function-name ${{ secrets.MANAGER_PROJECT_NAME }} --image-uri ${{ secrets.AWS_MANAGER_REPOSITORY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.MANAGER_PROJECT_NAME }}:latest
 
-  # deploy-register-batch:
-  #   runs-on: ubuntu-latest
+  deploy-register-batch:
+    runs-on: ubuntu-latest
 
-  #   env:
-  #     ENVIRONMENT: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v3
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-  #     - name: Get AWS Account ID
-  #       run: |
-  #         ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-  #         echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
+      - name: Get AWS Account ID
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
 
-  #     - name: Get VPC ID
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         VPC_ID=$(aws ec2 describe-vpcs \
-  #           --filters "Name=tag:Name,Values=nagiyu-vpc" \
-  #           --query 'Vpcs[0].VpcId' \
-  #           --output text)
-  #         echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+      - name: Get VPC ID
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=nagiyu-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
 
-  #     - name: Get Dev VPC ID
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         VPC_ID=$(aws ec2 describe-vpcs \
-  #           --filters "Name=tag:Name,Values=dev-nagiyu-vpc" \
-  #           --query 'Vpcs[0].VpcId' \
-  #           --output text)
-  #         echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+      - name: Get Dev VPC ID
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=dev-nagiyu-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
 
-  #     - name: Get Subnet IDs
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         SUBNET_IDS=$(aws ec2 describe-subnets \
-  #           --filters "Name=tag:Project,Values=niconico-mylist-assistant" \
-  #           --query 'Subnets[:2].SubnetId' \
-  #           --output text | tr '\t' ',' )
-  #         echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
+      - name: Get Subnet IDs
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          SUBNET_IDS=$(aws ec2 describe-subnets \
+            --filters "Name=tag:Project,Values=niconico-mylist-assistant" \
+            --query 'Subnets[:2].SubnetId' \
+            --output text | tr '\t' ',' )
+          echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
 
-  #     - name: Get Dev Subnet IDs
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         SUBNET_IDS=$(aws ec2 describe-subnets \
-  #           --filters "Name=tag:Project,Values=dev-niconico-mylist-assistant" \
-  #           --query 'Subnets[:2].SubnetId' \
-  #           --output text | tr '\t' ',' )
-  #         echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
+      - name: Get Dev Subnet IDs
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          SUBNET_IDS=$(aws ec2 describe-subnets \
+            --filters "Name=tag:Project,Values=dev-niconico-mylist-assistant" \
+            --query 'Subnets[:2].SubnetId' \
+            --output text | tr '\t' ',' )
+          echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
 
-  #     - name: Deploy Register Batch ECR
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         aws cloudformation deploy \
-  #           --template-file register-batch/aws/ecr.yaml \
-  #           --stack-name niconico-mylist-assistant-register-batch-ecr
+      - name: Deploy Register Batch ECR
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/ecr.yaml \
+            --stack-name niconico-mylist-assistant-register-batch-ecr
 
-  #     - name: Deploy Dev Register Batch ECR
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         aws cloudformation deploy \
-  #           --template-file register-batch/aws/dev-ecr.yaml \
-  #           --stack-name dev-niconico-mylist-assistant-register-batch-ecr
+      - name: Deploy Dev Register Batch ECR
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/dev-ecr.yaml \
+            --stack-name dev-niconico-mylist-assistant-register-batch-ecr
 
-  #     - name: Get ECR Repository URI
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         REPO_URI=$(aws ecr describe-repositories \
-  #           --repository-names niconico-mylist-assistant-register-batch-ecr \
-  #           --query 'repositories[0].repositoryUri' \
-  #           --output text)
-  #         echo "REPO_URI=$REPO_URI" >> $GITHUB_ENV
+      - name: Get ECR Repository URI
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          REPO_URI=$(aws ecr describe-repositories \
+            --repository-names niconico-mylist-assistant-register-batch-ecr \
+            --query 'repositories[0].repositoryUri' \
+            --output text)
+          echo "REPO_URI=$REPO_URI" >> $GITHUB_ENV
 
-  #     - name: Get Dev ECR Repository URI
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         REPO_URI=$(aws ecr describe-repositories \
-  #           --repository-names dev-niconico-mylist-assistant-register-batch-ecr \
-  #           --query 'repositories[0].repositoryUri' \
-  #           --output text)
-  #         echo "REPO_URI=$REPO_URI" >> $GITHUB_ENV
+      - name: Get Dev ECR Repository URI
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          REPO_URI=$(aws ecr describe-repositories \
+            --repository-names dev-niconico-mylist-assistant-register-batch-ecr \
+            --query 'repositories[0].repositoryUri' \
+            --output text)
+          echo "REPO_URI=$REPO_URI" >> $GITHUB_ENV
 
-  #     - name: Deploy Docker Image to ECR
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-  #         docker build \
-  #           -t niconico-mylist-assistant-register-batch \
-  #           -f register-batch/Dockerfile \
-  #           register-batch
-  #         docker tag niconico-mylist-assistant-register-batch:latest $REPO_URI:latest
-  #         docker push $REPO_URI:latest
+      - name: Deploy Docker Image to ECR
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          docker build \
+            -t niconico-mylist-assistant-register-batch \
+            -f register-batch/Dockerfile \
+            register-batch
+          docker tag niconico-mylist-assistant-register-batch:latest $REPO_URI:latest
+          docker push $REPO_URI:latest
 
-  #     - name: Deploy Docker Image to Dev ECR
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-  #         docker build \
-  #           -t dev-niconico-mylist-assistant-register-batch \
-  #           -f register-batch/Dockerfile \
-  #           register-batch
-  #         docker tag dev-niconico-mylist-assistant-register-batch:latest $REPO_URI:latest
-  #         docker push $REPO_URI:latest
+      - name: Deploy Docker Image to Dev ECR
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          docker build \
+            -t dev-niconico-mylist-assistant-register-batch \
+            -f register-batch/Dockerfile \
+            register-batch
+          docker tag dev-niconico-mylist-assistant-register-batch:latest $REPO_URI:latest
+          docker push $REPO_URI:latest
 
-  #     - name: Deploy Register Batch Security Group
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         aws cloudformation deploy \
-  #           --template-file register-batch/aws/sg.yaml \
-  #           --stack-name niconico-mylist-assistant-register-batch-sg \
-  #           --parameter-overrides \
-  #             VpcId=$VPC_ID
+      - name: Deploy Register Batch Security Group
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/sg.yaml \
+            --stack-name niconico-mylist-assistant-register-batch-sg \
+            --parameter-overrides \
+              VpcId=$VPC_ID
 
-  #     - name: Deploy Dev Register Batch Security Group
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         aws cloudformation deploy \
-  #           --template-file register-batch/aws/dev-sg.yaml \
-  #           --stack-name dev-niconico-mylist-assistant-register-batch-sg \
-  #           --parameter-overrides \
-  #             VpcId=$VPC_ID
+      - name: Deploy Dev Register Batch Security Group
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/dev-sg.yaml \
+            --stack-name dev-niconico-mylist-assistant-register-batch-sg \
+            --parameter-overrides \
+              VpcId=$VPC_ID
 
-  #     - name: Get Security Group ID
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         SG_ID=$(aws ec2 describe-security-groups \
-  #           --filters "Name=tag:Name,Values=niconico-mylist-assistant-register-batch-ecs-sg" \
-  #           --query 'SecurityGroups[0].GroupId' \
-  #           --output text)
-  #         echo "SG_ID=$SG_ID" >> $GITHUB_ENV
+      - name: Get Security Group ID
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters "Name=tag:Name,Values=niconico-mylist-assistant-register-batch-ecs-sg" \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text)
+          echo "SG_ID=$SG_ID" >> $GITHUB_ENV
 
-  #     - name: Get Dev Security Group ID
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         SG_ID=$(aws ec2 describe-security-groups \
-  #           --filters "Name=tag:Name,Values=dev-niconico-mylist-assistant-register-batch-ecs-sg" \
-  #           --query 'SecurityGroups[0].GroupId' \
-  #           --output text)
-  #         echo "SG_ID=$SG_ID" >> $GITHUB_ENV
+      - name: Get Dev Security Group ID
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters "Name=tag:Name,Values=dev-niconico-mylist-assistant-register-batch-ecs-sg" \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text)
+          echo "SG_ID=$SG_ID" >> $GITHUB_ENV
 
-  #     - name: Deploy Register Batch
-  #       if: env.ENVIRONMENT == 'production'
-  #       run: |
-  #         aws cloudformation deploy \
-  #           --template-file register-batch/aws/batch.yaml \
-  #           --stack-name niconico-mylist-assistant-register-batch \
-  #           --parameter-overrides \
-  #             EcrRepositoryUri=$REPO_URI \
-  #             SubnetIds=$SUBNET_IDS \
-  #             SecurityGroupIds=$SG_ID \
-  #           --capabilities CAPABILITY_NAMED_IAM
+      - name: Deploy Register Batch
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/batch.yaml \
+            --stack-name niconico-mylist-assistant-register-batch \
+            --parameter-overrides \
+              EcrRepositoryUri=$REPO_URI \
+              SubnetIds=$SUBNET_IDS \
+              SecurityGroupIds=$SG_ID \
+            --capabilities CAPABILITY_NAMED_IAM
 
-  #     - name: Deploy Dev Register Batch
-  #       if: env.ENVIRONMENT == 'development'
-  #       run: |
-  #         aws cloudformation deploy \
-  #           --template-file register-batch/aws/dev-batch.yaml \
-  #           --stack-name dev-niconico-mylist-assistant-register-batch \
-  #           --parameter-overrides \
-  #             EcrRepositoryUri=$REPO_URI \
-  #             SubnetIds=$SUBNET_IDS \
-  #             SecurityGroupIds=$SG_ID \
-  #           --capabilities CAPABILITY_NAMED_IAM
+      - name: Deploy Dev Register Batch
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/dev-batch.yaml \
+            --stack-name dev-niconico-mylist-assistant-register-batch \
+            --parameter-overrides \
+              EcrRepositoryUri=$REPO_URI \
+              SubnetIds=$SUBNET_IDS \
+              SecurityGroupIds=$SG_ID \
+            --capabilities CAPABILITY_NAMED_IAM
