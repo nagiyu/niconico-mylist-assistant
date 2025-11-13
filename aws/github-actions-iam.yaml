@@ -19,6 +19,10 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - batch:*
+            Resource: "*"
+          - Effect: Allow
+            Action:
               - cloudformation:*
             Resource: "*"
           - Effect: Allow
@@ -31,5 +35,13 @@ Resources:
             Resource: "*"
           - Effect: Allow
             Action:
+              - iam:*
+            Resource: "*"
+          - Effect: Allow
+            Action:
               - lambda:*
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - logs:*
             Resource: "*"

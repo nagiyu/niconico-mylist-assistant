@@ -48,3 +48,13 @@ jobs:
         run: |
           aws cloudformation validate-template \
             --template-body file://register-batch/aws/dev-sg.yaml
+
+      - name: Validate Register Batch
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://register-batch/aws/batch.yaml
+
+      - name: Validate Dev Register Batch
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://register-batch/aws/dev-batch.yaml
