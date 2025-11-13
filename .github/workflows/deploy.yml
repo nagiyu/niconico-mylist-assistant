@@ -25,6 +25,42 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Get VPC ID
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=nagiyu-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+
+      - name: Get Dev VPC ID
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=dev-nagiyu-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+
+      # - name: Get Internet Gateway ID
+      #   if: env.ENVIRONMENT == 'production'
+      #   run: |
+      #     IGW_ID=$(aws ec2 describe-internet-gateways \
+      #       --filters "Name=tag:Name,Values=nagiyu-igw" \
+      #       --query 'InternetGateways[0].InternetGatewayId' \
+      #       --output text)
+      #     echo "IGW_ID=$IGW_ID" >> $GITHUB_ENV
+
+      # - name: Get Dev Internet Gateway ID
+      #   if: env.ENVIRONMENT == 'development'
+      #   run: |
+      #     IGW_ID=$(aws ec2 describe-internet-gateways \
+      #       --filters "Name=tag:Name,Values=dev-nagiyu-igw" \
+      #       --query 'InternetGateways[0].InternetGatewayId' \
+      #       --output text)
+      #     echo "IGW_ID=$IGW_ID" >> $GITHUB_ENV
+
       - name: Deploy Register Batch ECR
         if: env.ENVIRONMENT == 'production'
         run: |
@@ -56,3 +92,19 @@ jobs:
             --query 'repositories[0].repositoryUri' \
             --output text)
           echo "REPO_URI=$REPO_URI" >> $GITHUB_ENV
+
+      - name: Deploy Register Batch Security Group
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/sg.yaml \
+            --stack-name niconico-mylist-assistant-register-batch-sg \
+            --parameter-overrides VpcId=$VPC_ID
+
+      - name: Deploy Dev Register Batch Security Group
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          aws cloudformation deploy \
+            --template-file register-batch/aws/dev-sg.yaml \
+            --stack-name dev-niconico-mylist-assistant-register-batch-sg \
+            --parameter-overrides VpcId=$VPC_ID

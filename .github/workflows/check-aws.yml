@@ -38,3 +38,13 @@ jobs:
         run: |
           aws cloudformation validate-template \
             --template-body file://register-batch/aws/dev-ecr.yaml
+
+      - name: Validate Register Batch Security Group
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://register-batch/aws/sg.yaml
+
+      - name: Validate Dev Register Batch Security Group
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://register-batch/aws/dev-sg.yaml
