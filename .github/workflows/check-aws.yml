@@ -6,6 +6,7 @@ on:
       - develop
     paths:
       - 'aws/**'
+      - 'register-batch/aws/**'
   workflow_dispatch:
 
 jobs:
@@ -27,3 +28,13 @@ jobs:
         run: |
           aws cloudformation validate-template \
             --template-body file://aws/github-actions-iam.yaml
+
+      - name: Validate Register Batch ECR
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://register-batch/aws/ecr.yaml
+
+      - name: Validate Dev Register Batch ECR
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://register-batch/aws/dev-ecr.yaml
