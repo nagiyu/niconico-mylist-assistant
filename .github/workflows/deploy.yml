@@ -2,9 +2,9 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - master
-      - develop
+    # branches:
+    #   - master
+    #   - develop
   workflow_dispatch:
 
 jobs:
@@ -24,6 +24,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get AWS Account ID
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
 
       - name: Get VPC ID
         if: env.ENVIRONMENT == 'production'
@@ -92,6 +97,28 @@ jobs:
             --query 'repositories[0].repositoryUri' \
             --output text)
           echo "REPO_URI=$REPO_URI" >> $GITHUB_ENV
+
+      - name: Deploy Docker Image to ECR
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          docker build \
+            -t niconico-mylist-assistant-register-batch \
+            -f register-batch/Dockerfile \
+            register-batch
+          docker tag niconico-mylist-assistant-register-batch:latest $REPO_URI:latest
+          docker push $REPO_URI:latest
+
+      - name: Deploy Docker Image to Dev ECR
+        if: env.ENVIRONMENT == 'development'
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          docker build \
+            -t dev-niconico-mylist-assistant-register-batch \
+            -f register-batch/Dockerfile \
+            register-batch
+          docker tag dev-niconico-mylist-assistant-register-batch:latest $REPO_URI:latest
+          docker push $REPO_URI:latest
 
       - name: Deploy Register Batch Security Group
         if: env.ENVIRONMENT == 'production'
