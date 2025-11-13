@@ -2,12 +2,55 @@ name: Deploy
 
 on:
   push:
-    # branches:
-    #   - master
-    #   - develop
+    branches:
+      - master
+      - develop
   workflow_dispatch:
 
 jobs:
+  deploy-register:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
+
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get AWS Account ID
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
+
+      - name: Deploy
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          cd register
+          docker build \
+            --build-arg AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
+            --build-arg S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }} \
+            --build-arg SHARED_SECRET_KEY=${{ secrets.SHARED_SECRET_KEY }} \
+            --build-arg NOTIFICATION_API_ENDPOINT=${{ secrets.NOTIFICATION_API_ENDPOINT }} \
+            --build-arg REGISTER_LAMBDA_ENDPOINT=${{ secrets.REGISTER_LAMBDA_ENDPOINT }} \
+            -t ${{ secrets.REGISTER_PROJECT_NAME }} .
+          docker tag ${{ secrets.REGISTER_PROJECT_NAME }}:latest $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.REGISTER_PROJECT_NAME }}:latest
+          docker push $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.REGISTER_PROJECT_NAME }}:latest
+
+      - name: Update Lambda Function
+        run: |
+          aws lambda update-function-code --function-name ${{ secrets.REGISTER_PROJECT_NAME }} --image-uri $ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.REGISTER_PROJECT_NAME }}:latest
+
   deploy-register-batch:
     runs-on: ubuntu-latest
 
