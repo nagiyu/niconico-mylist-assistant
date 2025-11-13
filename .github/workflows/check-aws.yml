@@ -1,7 +1,6 @@
 name: Check AWS
 
 on:
-  push:
   pull_request:
     branches:
       - develop
