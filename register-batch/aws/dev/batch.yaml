@@ -73,9 +73,9 @@ Resources:
         # Fargate resourceRequirements required for vCPU and memory
         ResourceRequirements:
           - Type: VCPU
-            Value: "4"
+            Value: "16"
           - Type: MEMORY
-            Value: "11264"
+            Value: "65536"
         ExecutionRoleArn: !Ref TaskExecutionRoleArn
         JobRoleArn: !Ref TaskRoleArn
         NetworkConfiguration:
@@ -108,7 +108,7 @@ Resources:
       RetryStrategy:
         Attempts: 1
       Timeout:
-        AttemptDurationSeconds: 7200
+        AttemptDurationSeconds: 600
       JobDefinitionName: dev-niconico-mylist-assistant-register-batch-jobdef
 
 # To deploy this template, run:

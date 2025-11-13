@@ -1,92 +1,43 @@
 // Next.js API Route: /api/register
 import { NextRequest, NextResponse } from "next/server";
+import { BatchClient, SubmitJobCommand, SubmitJobCommandInput } from '@aws-sdk/client-batch';
 import { IRegisterRequest } from "@/app/interface/IRegisterRequest";
 
-const LAMBDA_ENDPOINT = process.env.REGISTER_LAMBDA_ENDPOINT!;
-const SHARED_SECRET_KEY = process.env.SHARED_SECRET_KEY!;
-
-import crypto from "crypto";
-
-// AES-GCM暗号化（Node.js版）
-function encryptPassword(password: string, base64Key: string): string {
-    const key = Buffer.from(base64Key, "base64");
-    const nonce = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv("aes-256-gcm", key, nonce);
-    const ct = Buffer.concat([cipher.update(password, "utf8"), cipher.final()]);
-    const tag = cipher.getAuthTag();
-    // Python側は nonce + ciphertext + tag をbase64化している
-    const encrypted = Buffer.concat([nonce, ct, tag]);
-    return encrypted.toString("base64");
-}
-
-// Lambda を warmup する関数
-async function warmupLambda(): Promise<boolean> {
-    try {
-        const response = await fetch(LAMBDA_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ health_check: true }),
-            // Add timeout to prevent hanging
-            signal: AbortSignal.timeout(30000), // 30 seconds timeout
-        });
-        
-        if (!response.ok) {
-            console.error("Lambda warmup failed with status:", response.status);
-            return false;
-        }
-        
-        // Parse response to ensure Lambda is actually ready
-        const data = await response.json();
-        console.log("Lambda warmup successful:", data);
-        return true;
-    } catch (error) {
-        console.error("Lambda warmup failed:", error);
-        return false;
-    }
-}
-
 export async function POST(req: NextRequest) {
+    const { email, password, id_list, subscription, title }: IRegisterRequest = await req.json();
+
+    const client = new BatchClient({ region: process.env.AWS_REGION });
+
+    const params: SubmitJobCommandInput = {
+        jobName: `register-batch-job-${Date.now()}`,
+        jobQueue: 'dev-niconico-mylist-assistant-register-batch-queue',
+        jobDefinition: 'dev-niconico-mylist-assistant-register-batch-jobdef',
+        containerOverrides: {
+            environment: [
+                { name: 'NICONICO_EMAIL', value: email },
+                { name: 'NICONICO_PASSWORD', value: password },
+                { name: 'NICONICO_ID_LIST', value: id_list.join(',') },
+                { name: 'S3_BUCKET_NAME', value: 'niconico-mylist-assistant-register' },
+                { name: 'AWS_REGION', value: process.env.AWS_REGION! },
+                { name: 'NOTIFICATION_API_ENDPOINT', value: `${process.env.NEXTAUTH_URL!}/api/send-notification` },
+                { name: 'PUSH_SUBSCRIPTION', value: subscription! },
+            ],
+        },
+    };
+
     try {
-        const { email, password, id_list, subscription, title }: IRegisterRequest = await req.json();
+        const command = new SubmitJobCommand(params);
+        const response = await client.send(command);
+        console.log('Batch job submitted successfully:', response);
+    } catch (error) {
+        console.error('Batch job submission failed:', error);
 
-        // パスワード暗号化
-        const encrypted_password = encryptPassword(password, SHARED_SECRET_KEY);
-
-        // まずLambdaをwarmupする - これが失敗したら処理を停止
-        const warmupSuccess = await warmupLambda();
-        if (!warmupSuccess) {
-            console.error("Lambda warmup failed, cannot proceed with registration");
-            return NextResponse.json({ 
-                error: "サーバーの準備ができていません。しばらく待ってからもう一度お試しください。" 
-            }, { status: 503 });
+        if (error instanceof Error) {
+            return NextResponse.json({ error: `登録処理の開始に失敗しました: ${error.message}` }, { status: 500 });
+        } else {
+            return NextResponse.json({ error: '登録処理の開始に失敗しました: 不明なエラー' }, { status: 500 });
         }
-
-        // Warmup成功後、少し待つ
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Send single chain_register request with all id_list
-        const response = await fetch(LAMBDA_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "chain_register",
-                email,
-                password: encrypted_password,
-                id_list,
-                subscription: subscription ? JSON.stringify(subscription) : null,
-                title: title || "",
-                is_first_request: true
-            }),
-        });
-
-        if (!response.ok) {
-            console.error("Chain register action failed", await response.text());
-            return NextResponse.json({ error: "登録処理の開始に失敗しました。" }, { status: 500 });
-        }
-
-        // 即座にレスポンスを返す（処理は非同期で続行）
-        return NextResponse.json({ message: "登録処理を開始しました。完了時に通知をお送りします。" }, { status: 202 });
-    } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
     }
+
+    return NextResponse.json({ message: "登録処理を開始しました。完了時に通知をお送りします。" }, { status: 202 });
 }
