@@ -8,10 +8,13 @@ export async function POST(req: NextRequest) {
 
     const client = new BatchClient({ region: process.env.AWS_REGION });
 
+    // 環境判別は DynamoDB のテーブル名で行っているが、いずれは別の方法に変更する
+    const isDev = process.env.DYNAMO_TABLE_NAME?.includes('Dev');
+
     const params: SubmitJobCommandInput = {
         jobName: `register-batch-job-${Date.now()}`,
-        jobQueue: 'dev-niconico-mylist-assistant-register-batch-queue',
-        jobDefinition: 'dev-niconico-mylist-assistant-register-batch-jobdef',
+        jobQueue: isDev ? 'dev-niconico-mylist-assistant-register-batch-queue' : 'niconico-mylist-assistant-register-batch-queue',
+        jobDefinition: isDev ? 'dev-niconico-mylist-assistant-register-batch-jobdef' : 'niconico-mylist-assistant-register-batch-jobdef',
         containerOverrides: {
             environment: [
                 { name: 'NICONICO_EMAIL', value: email },
