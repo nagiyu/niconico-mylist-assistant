@@ -122,5 +122,5 @@ Resources:
       RetryStrategy:
         Attempts: 1
       Timeout:
-        AttemptDurationSeconds: 600
+        AttemptDurationSeconds: 900
       JobDefinitionName: dev-niconico-mylist-assistant-register-batch-jobdef
